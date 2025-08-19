@@ -1,0 +1,20 @@
+{
+  "name": "clipai-popup",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build": "electron-builder -mwl"
+  },
+  "devDependencies": {
+    "electron": "29.3.0",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "com.example.clipai",
+    "files": ["main.js", "index.html"],
+    "mac": { "category": "public.app-category.utilities" },
+    "win": { "target": "nsis" }
+  }
+}
