@@ -1,1 +1,11 @@
 node_modules/
+ClipAI-*/
+*.log
+*.DS_Store
+*.swp
+*.asar
+*.tgz
+*.bak
+.env
+coverage/
+dist/

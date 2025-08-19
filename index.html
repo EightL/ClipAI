@@ -1,1 +1,210 @@
-<!doctype html><html><head><meta charset=utf-8><title>Popup</title><style>body{margin:0;font:16px system-ui;display:flex;align-items:center;justify-content:center;height:100%;background:#2228;border:1px solid #555;color:#fff}button{font:inherit;padding:14px 26px;border-radius:10px;border:1px solid #888;background:#eee;color:#000;cursor:pointer}</style></head><body><button onclick="window.close()">Close</button></body></html>
+<!doctype html><html><head><meta charset="utf-8" />
+<title>ClipAI</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-f0mKkt1lEuzMdGII4XESyqCCpt5TR1+t0NenE2no0RvrRZtGJPD7W82dManIeZ9N" crossorigin="anonymous">
+<!-- Markdown & KaTeX will be lazy-loaded on first render to keep initial memory low -->
+	<style>
+	html,body{margin:0;overflow:hidden}
+	:root{--bg:#12161aee;--fg:#f1f5f9;--panel:#1c2228;--border:#253038;--panel-border:#2f3b44;--btn-bg:#222a31;--btn-border:#2f3b44;--btn-hover:#2b353d;--shadow:0 8px 24px -6px #000c,0 2px 4px -1px #0006;--accent:#4f9cff;--accent-fg:#ffffff}
+	body.light{--bg:#ffffffee;--fg:#1b2733;--panel:#f5f8fa;--border:#d6dee4;--panel-border:#cfd8df;--btn-bg:#eef3f6;--btn-border:#d3dde3;--btn-hover:#e3eaef;--shadow:0 8px 20px -8px #0a152033,0 2px 4px -1px #0a15201a;--accent:#2563eb;--accent-fg:#ffffff}
+	body{font:16px system-ui;background:var(--bg);color:var(--fg);-webkit-user-select:text;user-select:text;padding:12px 12px 12px 12px;display:inline-flex;flex-direction:row;gap:12px;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);min-width:360px;max-width:1100px;-webkit-app-region:drag;transition:background .25s,color .25s,border-color .25s,box-shadow .25s}
+	#bubble{flex:1;overflow:visible;white-space:normal;line-height:1.34;background:linear-gradient(145deg,var(--panel) 0%,rgba(255,255,255,0.02) 100%);padding:12px 16px;border:1px solid var(--panel-border);border-radius:12px;font-size:16px;font-weight:500;display:inline-block;max-width:1000px;width:fit-content;-webkit-app-region:no-drag}
+	button, .icon{cursor:pointer;background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--fg);padding:7px 12px;font:500 14px system-ui;border-radius:10px;line-height:1;display:inline-flex;align-items:center;justify-content:center;min-width:38px;transition:.18s background,color,border-color,box-shadow}
+	button:hover,.icon:hover{box-shadow:0 2px 6px -2px #0008}
+	button:active,.icon:active{background:var(--btn-hover);box-shadow:0 0 0 2px var(--panel) inset}
+	button:hover,.icon:hover{background:var(--btn-hover);color:var(--fg)}
+	#gear{font-size:17px;padding:7px 10px}
+	#side{display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:6px;margin:-6px 0 -6px -6px;-webkit-app-region:drag;border-radius:12px}
+	#modeExplain{font-weight:600}
+	#side button,#side .icon{padding:5px 8px;min-width:34px;font-size:14px;border-radius:10px;-webkit-app-region:no-drag}
+	#side button{font-weight:600}
+	#settings{display:none;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--panel-border);padding:12px 14px 14px 14px;border-radius:12px;position:absolute;top:8px;left:8px;max-width:320px;width:calc(100% - 120px);max-height:calc(100% - 16px);overflow:auto;box-shadow:var(--shadow);backdrop-filter:blur(6px) saturate(140%)}
+	#settings input, #settings select{width:100%;padding:6px 8px;border-radius:8px;background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--fg);font:13px system-ui;font-weight:500;box-shadow:0 1px 2px -1px #000a inset}
+	body.settings-open #bubble{opacity:0.25;filter:blur(1px);transition:.2s}
+	#side button.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+	#mini{font-size:10px;opacity:.55}
+	::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#444;border-radius:6px}
+    </style></head><body>
+	<div id="bubble">Waiting for selection...</div>
+	<div id="side">
+		<button id="modeExplain" class="mbtn" title="Explain (switch from summary)">E</button>
+		<button id="modeSummary" class="mbtn" title="Summarize">S</button>
+		<div class="icon" id="gear" title="Settings">⚙</div>
+	</div>
+	<div id="settings">
+		<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+			<strong style="font-size:13px;flex:1">Settings</strong>
+			<select id="provider" style="flex:0;min-width:110px;font-size:12px">
+				<option value="openai">OpenAI</option>
+				<option value="gemini">Gemini</option>
+			</select>
+		</div>
+		<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;margin:4px 0 2px">
+			<label style="display:flex;align-items:center;gap:8px">
+				<span style="width:70px;opacity:.75">Summ key</span>
+				<button id="recordSumm" type="button" style="flex:1;font-size:11px;padding:4px 8px">Record…</button>
+			</label>
+			<label style="display:flex;align-items:center;gap:8px">
+				<span style="width:70px;opacity:.75">Explain key</span>
+				<button id="recordExplain" type="button" style="flex:1;font-size:11px;padding:4px 8px">Record…</button>
+			</label>
+			<div id="hkHint" style="font-size:10px;opacity:.55">Click a button then press desired combo (Esc to cancel). Empty = disabled.</div>
+		</div>
+		<label style="display:flex;align-items:center;gap:8px;font-size:12px"><input type="checkbox" id="themeToggle" style="width:14px;height:14px"> Light mode</label>
+		<label style="display:flex;align-items:center;gap:8px;font-size:12px">
+			<select id="memoryMode" style="flex:1;padding:4px 6px;border-radius:8px;background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--fg);font:12px system-ui">
+				<option value="normal">Normal memory</option>
+				<option value="aggressive">Aggressive (destroy window)</option>
+			</select>
+		</label>
+		<input id="key" type="password" placeholder="API key" />
+		<input id="model" placeholder="Model (optional)" style="display:none" />
+		<div style="display:flex;gap:6px;justify-content:flex-end">
+			<button id="save">Save</button>
+			<button id="hide">Hide</button>
+		</div>
+		<div id="mini">Config: userData/config.json</div>
+	</div>
+<script>
+	const bubble = document.getElementById('bubble');
+	const gear = document.getElementById('gear');
+	const settings = document.getElementById('settings');
+	const keyInput = document.getElementById('key');
+	const modelInput = document.getElementById('model');
+	const providerSel = document.getElementById('provider');
+	const saveBtn = document.getElementById('save');
+	const hideBtn = document.getElementById('hide');
+	const modeExplain = document.getElementById('modeExplain');
+	const modeSummary = document.getElementById('modeSummary');
+	const themeToggle = document.getElementById('themeToggle');
+	const recordSumm = document.getElementById('recordSumm');
+	const recordExplain = document.getElementById('recordExplain');
+	const memoryModeSel = document.getElementById('memoryMode');
+	let currentRecording = null; // 'summary' | 'explain' | null
+	function formatCombo(e){
+		let parts=[];
+		if(e.metaKey) parts.push('Command');
+		if(e.ctrlKey) parts.push('Control');
+		if(e.altKey) parts.push('Alt');
+		if(e.shiftKey) parts.push('Shift');
+		let key = e.key;
+		// Normalize common keys to Electron accelerator tokens
+		if(key === ' ') key = 'Space';
+		if(key === 'Escape') key = 'Esc';
+		if(key.startsWith('Arrow')) key = key.replace('Arrow',''); // ArrowLeft -> Left
+		if(/^F\d{1,2}$/.test(key)) { /* keep function key */ }
+		else if(key.length===1){ key = key.toUpperCase(); }
+		// Ignore if still a pure modifier
+		if(['Control','Shift','Alt','Meta','Command'].includes(key)) return '';
+		parts.push(key);
+		return parts.join('+');
+	}
+	function beginRecord(which){
+		currentRecording = which;
+		const btn = which==='summary'? recordSumm: recordExplain;
+		btn.textContent = 'Press keys…';
+		btn.dataset.value = '';
+		btn.classList.add('active');
+	}
+	document.addEventListener('keydown', async e=>{
+		if(!currentRecording) return;
+		e.preventDefault(); e.stopPropagation();
+		if(e.key==='Backspace' || e.key==='Delete'){
+			const btn = currentRecording==='summary'? recordSumm: recordExplain;
+			btn.dataset.value=''; btn.textContent = 'Disabled'; btn.classList.remove('active'); currentRecording=null; await saveHotkeysDebounced(); return;
+		}
+		if(e.key==='Escape'){
+			// cancel
+			const btn = currentRecording==='summary'? recordSumm: recordExplain;
+			btn.textContent = (btn.dataset.value||'Record…');
+			btn.classList.remove('active');
+			currentRecording=null; return;
+		}
+		const combo = formatCombo(e);
+		if(!combo){return;}
+		const btn = currentRecording==='summary'? recordSumm: recordExplain;
+		btn.dataset.value = combo;
+		btn.textContent = combo;
+		btn.classList.remove('active');
+		currentRecording = null;
+		await saveHotkeysDebounced();
+	});
+	async function saveHotkeys(){
+		await clipAI.setHotkeys(recordSumm.dataset.value||'', recordExplain.dataset.value||'');
+	}
+	const saveHotkeysDebounced = (()=>{ let t=null; return ()=>{ clearTimeout(t); t=setTimeout(saveHotkeys,250); }; })();
+	recordSumm.onclick = ()=> beginRecord('summary');
+	recordExplain.onclick = ()=> beginRecord('explain');
+    let lastClipboardText = '';
+	    let lastMode = 'summary'; // default mode always summary
+    let suppressResize = false; // prevent growth animation
+    let lockedWidth = null; // lock width after first render to avoid horizontal growth
+
+    function adjustSize(){
+        if(suppressResize) return;
+        requestAnimationFrame(()=>{
+            let contentW = Math.min(880, Math.max(300, document.body.scrollWidth + 40));
+			if (lockedWidth == null) lockedWidth = 600; // default to ~600px width after scale
+            // allow shrink if content is narrower than the locked width
+            if (contentW < lockedWidth) lockedWidth = contentW;
+            // prefer around 100px height but allow it to grow if content needs more
+            let h = Math.max(30, Math.min(600, document.body.scrollHeight + 0));
+            clipAI.resize(lockedWidth, h);
+        });
+    }
+    new ResizeObserver(adjustSize).observe(document.body);
+	function showSettings(v){ settings.style.display = v? 'flex':'none'; document.body.classList.toggle('settings-open', v); if(v) keyInput.focus(); }
+    gear.onclick = ()=> showSettings(settings.style.display==='none');
+    hideBtn.onclick = ()=> showSettings(false);
+    saveBtn.onclick = async ()=>{ const k = keyInput.value.trim(); if(!k) return; const model = modelInput.value.trim(); await clipAI.saveProviderKey(providerSel.value, k, model||undefined); await clipAI.setActiveProvider(providerSel.value); keyInput.value=''; modelInput.value=''; showSettings(false); };
+	    async function run(mode){
+	        lastMode = mode;
+		modeExplain.classList.toggle('active', mode==='explain');
+		modeSummary.classList.toggle('active', mode!=='explain');
+	        suppressResize = true;
+	        lockedWidth = null;
+	        const clipRun = await clipAI.summarizeSelection();
+	        lastClipboardText = clipRun.inputPreview || lastClipboardText || await clipAI.getClipboard();
+	        bubble.textContent = (mode==='explain'?'Explaining':'Summarizing')+'...';
+		const full = await clipAI.processText(lastClipboardText || clipRun.inputPreview || '', mode==='explain'?'explain':'summary');
+		if(full.error){ bubble.textContent='Error: '+full.error; }
+		else { setBubbleMarkdown(full.output||''); }
+		document.body.classList.add('compact');
+		suppressResize = false; adjustSize();
+	}
+modeExplain.onclick = ()=> run('explain');
+modeSummary.onclick = ()=> run('summary');
+	let mdRenderer = null;
+	let mdLoading = null;
+	function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s); }); }
+	async function ensureMarkdown(){
+		if(mdRenderer) return mdRenderer;
+		if(mdLoading) return mdLoading;
+		mdLoading = (async()=>{
+			// Load markdown-it then katex plugin (katex CSS already in head)
+			await loadScript('https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js');
+			await loadScript('https://cdn.jsdelivr.net/npm/markdown-it-katex@2.0.3/dist/markdown-it-katex.min.js');
+			if(window.markdownit){ mdRenderer = window.markdownit({html:false,linkify:true,breaks:true}).use(window.markdownitKatex); }
+			return mdRenderer;
+		})();
+		return mdLoading;
+	}
+	async function setBubbleMarkdown(txt){
+		// Render plain text immediately, upgrade to markdown after libs load (perceived instant)
+		bubble.textContent = txt;
+		if(!mdRenderer){
+			ensureMarkdown().then(r=>{ if(r){ bubble.innerHTML = r.render(txt); adjustSize(); } });
+		}
+		else { bubble.innerHTML = mdRenderer.render(txt); }
+		if(!suppressResize) adjustSize();
+	}
+	clipAI.onSummary(async d=>{ if(d.error){ bubble.textContent='Error: '+d.error; } else { suppressResize=true; setBubbleMarkdown(d.summary); }
+		lastClipboardText = d.fullText || d.inputPreview || lastClipboardText || await clipAI.getClipboard();
+		if(lastClipboardText) document.body.classList.add('compact');
+		suppressResize=false; adjustSize(); });
+	providerSel.onchange = ()=>{
+		const p = providerSel.value;
+		modelInput.style.display = (p==='openai' || p==='gemini') ? 'block':'none';
+	};
+	(async()=>{ const cfg = await clipAI.getConfig(); providerSel.value = cfg.active; providerSel.onchange(); const c = cfg.providers[cfg.active]||{}; if(!c.key) showSettings(true); if(cfg.theme==='light'){ document.body.classList.add('light'); themeToggle.checked=true; } themeToggle.onchange = ()=>{ const t = themeToggle.checked? 'light':'dark'; document.body.classList.toggle('light', t==='light'); clipAI.setTheme(t); }; if(cfg.hotkeys){ if(cfg.hotkeys.summarize){ recordSumm.dataset.value = cfg.hotkeys.summarize; recordSumm.textContent = cfg.hotkeys.summarize; } if(cfg.hotkeys.explain){ recordExplain.dataset.value = cfg.hotkeys.explain; recordExplain.textContent = cfg.hotkeys.explain; } } if(cfg.memoryMode){ memoryModeSel.value = cfg.memoryMode; } memoryModeSel.onchange = ()=> clipAI.setMemoryMode(memoryModeSel.value); adjustSize(); })();
+</script>
+</body></html>
