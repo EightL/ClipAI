@@ -1,12 +1,18 @@
 {
-  "name": "clipai-popup",
+  "name": "clipai",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "author": "EightL",
   "main": "main.js",
+  "description": "Instant AI popup that summarizes & explains selected text system-wide with multi-provider LLMs, themes, and rich Markdown rendering.",
+  "repository": { "type": "git", "url": "https://github.com/EightL/ClipAI.git" },
+  "bugs": { "url": "https://github.com/EightL/ClipAI/issues" },
+  "homepage": "https://github.com/EightL/ClipAI#readme",
   "scripts": {
     "dev": "electron .",
     "build": "electron-builder -mwl",
-    "package:mac": "electron-packager . ClipAI --platform=darwin --arch=arm64 --overwrite --prune=true",
+    "package:mac": "electron-packager . ClipAi --platform=darwin --arch=arm64 --overwrite --prune=true",
     "dist": "electron-builder --mac"
   },
   "devDependencies": {
@@ -16,20 +22,32 @@
   },
   "build": {
     "appId": "com.yourdomain.clipai",
+    "productName": "ClipAI",
+    "asar": true,
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
       "main.js",
       "index.html",
+      "settings.html",
       "preload.js",
-  "config.example.json",
-  "icons/**"
+      "config.example.json",
+      "README.md",
+      "LICENSE",
+      "icons/**"
     ],
     "mac": {
-  "category": "public.app-category.productivity",
-  "icon": "icons/icon.icns"
+      "category": "public.app-category.productivity",
+      "icon": "icons/icon.icns"
     },
     "win": {
-  "target": "nsis",
-  "icon": "icons/icon.ico"
+      "target": "nsis",
+      "icon": "icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
     }
   }
 }
