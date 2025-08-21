@@ -385,14 +385,18 @@
 		let t = text.replace(/\r\n/g,'\n');
 		// Collapse multiple blank lines
 		t = t.replace(/\n{3,}/g,'\n\n');
+		// Bullet points: only if line starts with "* " (after newline or beginning of text)
+		t = t.replace(/(^|\n)\*[\t ]+(.*)/g, '$1<li>$2</li>');
 		// Bold
 		t = t.replace(/\*\*([^*\n][^\n]*?)\*\*/g,'<strong>$1<\/strong>');
-		// Simple list detection lines starting with - or * or number.
+		// Italics: only if surrounded by word boundaries, not followed by whitespace
+		t = t.replace(/\*(?!\s)([^*]+?)(?<!\s)\*/g, '<em>$1</em>');
+		// Simple list detection lines starting with - or number.
 		const lines = t.split(/\n/);
 		let html=''; let inList=false; let listType='ul';
 		function close(){ if(inList){ html += (listType==='ul'?'</ul>':'</ol>'); inList=false; }}
 		for(const line of lines){
-			let m=line.match(/^\s*[-*]\s+(.*)$/);
+			let m=line.match(/^\s*-\s+(.*)$/);
 			let om=line.match(/^\s*(\d+)\.\s+(.*)$/);
 			if(m){ if(!inList || listType!=='ul'){ close(); html+='<ul>'; inList=true; listType='ul'; } html+='<li>'+m[1]+'</li>'; }
 			else if(om){ if(!inList || listType!=='ol'){ close(); html+='<ol>'; inList=true; listType='ol'; } html+='<li>'+om[2]+'</li>'; }

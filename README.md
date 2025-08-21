@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="icons/icon@2x.png" width="96" alt="ClipAI icon" /><br/>
+  <img src="icons/icon.png" width="96" alt="ClipAI icon" /><br/>
   <h1>ClipAI</h1>
   <p><em>Instant AI summaries & explanations for any selected text.</em></p>
   <strong>Status:</strong> Public Beta
@@ -9,17 +9,27 @@
 		<a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg"></a>
 		<img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-informational">
 		<img alt="Electron" src="https://img.shields.io/badge/electron-29.x-47848F?logo=electron&logoColor=white">
+		<a href="https://buymeacoffee.com/eightl" target="_blank"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee&style=flat" alt="Buy Me a Coffee"></a>
 	</p>
 </div>
 
 ---
 
+## Support
+
+If you like ClipAI, consider supporting development!
+
+<a href="https://buymeacoffee.com/eightl" target="_blank">
+	<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="40" style="border-radius:6px;box-shadow:0 2px 8px -4px #0003;" />
+</a>
+
 ## Why ClipAI?
-Reading something dense and just want the gist – fast? ClipAI pops up exactly where you are, processes the current selection, and disappears when you’re done. No copy/paste dance. No browser switching. Low friction = you actually use it.
+Reading something dense and just want the gist – fast? ClipAI pops up exactly where you are, grabs your current clipboard text, and processes it with AI to give you a summary or explanation. No copy/paste dance. No browser switching. Low friction = you actually use it.
 
 ## Core Features
 * Multi‑provider: OpenAI, Gemini, Anthropic, Groq, Grok (OpenRouter) – bring your own keys.
 * One hotkey -> popup -> summary. Press again to hide.
+* Uses your clipboard text: select any text, copy it, and hit the hotkey to get instant AI output.
 * Prompt presets + your own custom instructions. Default preset returns ≤3 Markdown‑formatted sentences.
 * Markdown rendering with optional modes: Off, Light, or Full.
 * Themes: Light (default), Dark, Midnight, Forest, Rose, Amber, High Contrast.

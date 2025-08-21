@@ -253,7 +253,7 @@ function createOnboardingWindow(){
    <h1>Welcome to ClipAI</h1>
    <p>Instant summaries & explanations for any selected text. Your keys stay local.</p>
    <ul>
-     <li>Select text anywhere.</li>
+     <li>Select and Copy text anywhere.</li>
      <li>Press <span class='hotkey'>${process.platform==='darwin'?'⌘':'Ctrl'}+Shift+Space</span>.</li>
      <li>Popup shows immediately.</li>
      <li>Add custom presets & hotkeys in Settings.</li>
@@ -367,7 +367,7 @@ function startAutoHideTimer(){
 // ------------------------- Tray -------------------------
 function createTray(){
   if(tray) return tray;
-  let iconPath = path.join(__dirname,'..','icons','icon.png');
+  let iconPath = path.join(__dirname,'..','icons','icon22.png');
   let image = nativeImage.createFromPath(iconPath);
   if(process.platform === 'darwin'){
     try {
