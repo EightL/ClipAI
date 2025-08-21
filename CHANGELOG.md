@@ -5,6 +5,7 @@
 ### Fixed
 - Minor bugs and edge cases resolved for stable release.
 
+
 ## [0.2.0] - 2025-08-21
 ### Added
 - Onboarding Quick Setup: pick Provider/Model and enter API key.

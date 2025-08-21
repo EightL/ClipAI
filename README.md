@@ -2,7 +2,7 @@
   <img src="icons/icon.png" width="96" alt="ClipAI icon" /><br/>
   <h1>ClipAI</h1>
   <p><em>Instant AI summaries & explanations for any selected text.</em></p>
-  <strong>Status:</strong> Public Beta
+  <strong>Status:</strong> Official 1.0 release
 	<br/>
 	<!-- Badges -->
 	<p>
