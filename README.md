@@ -18,12 +18,13 @@
 Reading something dense and just want the gist – fast? ClipAI pops up exactly where you are, processes the current selection, and disappears when you’re done. No copy/paste dance. No browser switching. Low friction = you actually use it.
 
 ## Core Features
-* Multi‑provider: OpenAI, Gemini, Anthropic, Mistral, Groq, Cohere (bring your own keys).
-* One hotkey -> popup -> summary (or explanation). Hit again to dismiss.
-* Smart prompt presets + custom instructions per mode.
-* Fast inline markdown (bullets, bold, code).
-* Themes: Dark, Light, Midnight, Forest, Rose, Amber, High Contrast.
-* Aggressive memory mode destroys the window when hidden (ultra‑lean).
+* Multi‑provider: OpenAI, Gemini, Anthropic, Groq, Grok (OpenRouter) – bring your own keys.
+* One hotkey -> popup -> summary. Press again to hide.
+* Prompt presets + your own custom instructions. Default preset returns ≤3 Markdown‑formatted sentences.
+* Markdown rendering with optional modes: Off, Light, or Full.
+* Themes: Light (default), Dark, Midnight, Forest, Rose, Amber, High Contrast.
+* Auto‑hide timer with subtle countdown (optional).
+* Settings include a Danger Zone to reset all app settings instantly.
 * Keys stored locally in `userData/config.json` only – never proxied.
 
 ## Quick Start
@@ -36,27 +37,26 @@ Reading something dense and just want the gist – fast? ClipAI pops up exactly 
 	npm run dev
 	```
 3. Press the default hotkey (macOS: `Cmd+Shift+Space`, Win/Linux: `Ctrl+Shift+Space`).
-4. Paste or select text in any app, hit the hotkey, get a summary. Switch to “Explain” by assigning a second hotkey in Settings.
+4. Select text in any app and hit the hotkey to get a summary. If you haven’t set an API key yet, the onboarding screen (or Settings) offers a quick Provider/Model/Key setup.
 
 ## Settings Overview
-Open the popup and click the gear (⚙) or assign a hotkey.
+Open the popup and click the gear (⚙) to toggle Preferences.
 
 Section | What it does
 ------- | -------------
-Provider & Key | Choose an AI provider and save your API key (optional model override).
-Theme & Memory | Pick a theme; set memory mode (normal vs aggressive window destruction).
-Markdown | Toggle markdown rendering if you want absolute minimal CPU.
-Hotkeys | Re‑record summarize/explain shortcuts (must include a non‑modifier key).
-Prompt Presets | Pick terse, structured system prompts or write your own.
+Provider & Key | Choose a provider and save your API key (optional model override).
+Theme | Pick Light/Dark/Midnight/Forest/Rose/Amber/Contrast.
+Markdown Mode | Off, Light (bold & bullets), or Full markdown.
+Auto Hide | Optional timer with live countdown.
+Hotkeys | Record summarize/explain shortcuts (must include a non‑modifier key).
+Prompt Presets | Use the defaults or write your own.
+Danger Zone | Reset all settings to factory defaults.
 
 ## Custom Prompts
-Prompts act as the model’s system instructions. Keep them short and imperative. Example (summary):
+Prompts act as the model’s system instructions. Keep them short and imperative. Example default summary:
 ```
-Return 3 * terse bullets capturing problem, approach, outcome. <=12 words each. No intro.
+Summarize in ≤3 concise sentences. Use Markdown formatting (headers, **bold**, *italics*, lists if useful).
 ```
-
-## Config File
-A sample lives in `config.example.json`. The runtime config is written to your OS user data dir (`app.getPath('userData')`), not the repo. Safe to delete – it will regenerate.
 
 ## Build / Distribute
 Standard electron-builder config is included.

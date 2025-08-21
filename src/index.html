@@ -1,0 +1,610 @@
+<!doctype html><html><head><meta charset="utf-8" />
+<title>ClipAI</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-f0mKkt1lEuzMdGII4XESyqCCpt5TR1+t0NenE2no0RvrRZtGJPD7W82dManIeZ9N" crossorigin="anonymous">
+<!-- Markdown & KaTeX will be lazy-loaded on first render to keep initial memory low -->
+	<style>
+	html,body{margin:0;overflow:hidden}
+	:root{--bg:#12161aee;--fg:#f1f5f9;--panel:#1c2228;--border:#253038;--panel-border:#2f3b44;--btn-bg:#222a31;--btn-border:#2f3b44;--btn-hover:#2b353d;--shadow:0 14px 38px -12px #000d;--accent:#4f9cff;--accent-fg:#ffffff}
+	body.light{--bg:#ffffffee;--fg:#1b2733;--panel:#f5f8fa;--border:#d6dee4;--panel-border:#cfd8df;--btn-bg:#eef3f6;--btn-border:#d3dde3;--btn-hover:#e3eaef;--shadow:0 14px 32px -14px #0a15203a;--accent:#2563eb;--accent-fg:#ffffff}
+	body.midnight{--bg:#0b0f17ee;--fg:#e4ecf5;--panel:#121926;--border:#1f2b3a;--panel-border:#1f2b3a;--btn-bg:#182233;--btn-border:#27354a;--btn-hover:#203146;--accent:#5b8fff;--accent-fg:#ffffff}
+	body.forest{--bg:#0f1613ee;--fg:#e2f5ec;--panel:#16231d;--border:#1f3328;--panel-border:#1f3328;--btn-bg:#1b2d23;--btn-border:#254233;--btn-hover:#234a36;--accent:#34c482;--accent-fg:#042716}
+	body.rose{--bg:#1c1014ee;--fg:#fde8ef;--panel:#26171d;--border:#3a222a;--panel-border:#3a222a;--btn-bg:#2d1c23;--btn-border:#442832;--btn-hover:#4c303b;--accent:#ff4f8b;--accent-fg:#2b0915}
+	body.amber{--bg:#191307ee;--fg:#fff3d6;--panel:#241c0d;--border:#3a2b14;--panel-border:#3a2b14;--btn-bg:#2b210f;--btn-border:#423016;--btn-hover:#493719;--accent:#f4b21a;--accent-fg:#2a1900}
+	body.contrast{--bg:#000000ee;--fg:#ffffff;--panel:#000;--border:#555;--panel-border:#555;--btn-bg:#0d0d0d;--btn-border:#555;--btn-hover:#222;--accent:#ffdd33;--accent-fg:#000}
+	body{font:16px system-ui;background:transparent;color:var(--fg);-webkit-user-select:none;user-select:none;margin:0;padding:0;min-width:360px;max-width:1100px;-webkit-app-region:drag;position:relative;display:block}
+	/* Outer wrapper carries shadow so its blur follows radius cleanly */
+	#bubbleWrapper{position:relative;display:inline-block;border-radius:28px;background:transparent;padding:0;margin:0}
+	#bubble{position:relative;overflow:visible;white-space:normal;line-height:1.34;background:var(--panel);padding:18px 18px 20px 18px;border:none;border-radius:22px;font-size:16px;font-weight:500;display:inline-block;width:auto;max-width:860px;min-width:220px;box-sizing:border-box;-webkit-app-region:drag;color:var(--fg);-webkit-user-select:none;user-select:none;word-wrap:break-word}
+	#bubble.fade-out{opacity:0;transform:translateY(-4px) scale(.985);transition:opacity .18s ease, transform .18s ease;}
+	#bubble:not(.fade-out){transition:opacity .12s ease, transform .18s ease;}
+	body.light #bubble,body.midnight #bubble,body.forest #bubble,body.rose #bubble,body.amber #bubble,body.contrast #bubble{background:var(--panel);color:var(--fg)}
+	/* Fade-in animation */
+	#bubble.appearing{animation:bubbleIn .26s cubic-bezier(.22,.9,.3,1) forwards}
+	@keyframes bubbleIn{0%{opacity:0;transform:translateY(6px) scale(.985)}70%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1)}}
+	/* Preserve intentional newlines produced by postFormatMarkdown until markdown-it upgrades rendering */
+	/* Use normal whitespace by default; we'll temporarily switch to pre-line only while displaying raw text */
+	#bubbleContent{white-space:normal}
+	/* Removed internal scrolling; bubble now grows with content */
+	/* Markdown element baseline styling */
+	#bubbleContent h1,#bubbleContent h2,#bubbleContent h3,#bubbleContent h4,#bubbleContent h5,#bubbleContent h6{margin:2px 0 0;font-weight:650;line-height:1.12;}
+	/* Collapse spacing between consecutive headings (remove virtually all extra vertical gap) */
+	#bubbleContent h1 + h2,#bubbleContent h2 + h3,#bubbleContent h1 + h3,#bubbleContent h2 + h4,#bubbleContent h3 + h4{margin-top:1px;}
+	/* Tighten paragraph spacing too so overall layout is denser */
+	#bubbleContent p{margin:1px 0 5px;}
+	/* Remove extra gap directly after a heading */
+	#bubbleContent h1 + p,#bubbleContent h2 + p,#bubbleContent h3 + p,#bubbleContent h4 + p{margin-top:1px;}
+	#bubbleContent h1{font-size:21px}#bubbleContent h2{font-size:18px}#bubbleContent h3{font-size:16px}#bubbleContent h4{font-size:15px}#bubbleContent h5{font-size:14px}#bubbleContent h6{font-size:13px;font-weight:600}
+	#bubbleContent > :first-child{margin-top:0}
+	#bubbleContent ul,#bubbleContent ol{margin:4px 0 6px 20px;padding:0 0 0 2px}
+	#bubbleContent ul ul,#bubbleContent ol ol{margin:2px 0 2px 28px}
+	#bubbleContent ol{list-style:decimal outside;counter-reset:item}
+	#bubbleContent ol > li{counter-increment:item}
+	#bubbleContent ol > li::marker{font-variant-numeric:tabular-nums}
+	#bubbleContent ul{list-style:disc outside}
+	#bubbleContent ul ul{list-style:circle}
+	#bubbleContent li{margin:1px 0 1px 2px;padding:0}
+	#bubbleContent blockquote{margin:10px 0;padding:4px 12px 6px 14px;border-left:4px solid var(--accent);background:rgba(255,255,255,.03);border-radius:10px;font-style:normal}
+	body.light #bubbleContent blockquote{background:rgba(0,0,0,.04)}
+	#bubbleContent code{background:rgba(255,255,255,.08);padding:2px 5px;border-radius:6px;font:13px ui-monospace,monaco,monospace}
+	body.light #bubbleContent code{background:#eef2f7}
+	#bubbleContent pre{background:rgba(255,255,255,.06);padding:12px 14px;border-radius:14px;overflow:auto;margin:10px 0;font:13px ui-monospace,monaco,monospace;white-space:pre}
+	body.light #bubbleContent pre{background:#f1f5f9}
+	#bubbleContent pre code{background:transparent;padding:0;border-radius:0}
+	#bubbleContent hr{border:0;height:1px;background:var(--border);margin:6px 0 6px;border-radius:1px}
+	button, .icon{cursor:pointer;background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--fg);padding:7px 12px;font:500 14px system-ui;border-radius:10px;line-height:1;display:inline-flex;align-items:center;justify-content:center;min-width:38px;transition:.18s background,color,border-color,box-shadow}
+	button:hover,.icon:hover{box-shadow:0 2px 6px -2px #0008}
+	button:active,.icon:active{background:var(--btn-hover);box-shadow:0 0 0 2px var(--panel) inset}
+	button:hover,.icon:hover{background:var(--btn-hover);color:var(--fg)}
+	#gear,#closeBtn{position:absolute;top:6px;font-size:11px;width:22px;height:22px;padding:3px;border:0;background:transparent;z-index:10;-webkit-app-region:no-drag;opacity:0;transition:opacity .15s, transform .18s;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--fg)}
+	#gear{right:6px}
+	/* Add more gap: move close button further left from settings */
+	#closeBtn{right:56px;left:auto}
+	/* Subtle countdown (auto-hide) just to the left of close button */
+	#countdown{position:absolute;top:8px;right:12px;font-size:11px;font-weight:600;line-height:1;opacity:.28;pointer-events:none;-webkit-app-region:no-drag;user-select:none;min-width:12px;text-align:right;}
+	#bubble:hover #countdown{opacity:.55}
+	#bubble:hover #gear,#bubble:hover #closeBtn{opacity:1}
+	/* Enlarge only the gear icon (settings) while retaining close icon size */
+	#gear svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;vector-effect:non-scaling-stroke}
+	#closeBtn svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
+	#gear:hover,#closeBtn:hover{transform:scale(1.12)}
+	#gear:active,#closeBtn:active{transform:scale(.92)}
+	#bubbleContent{-webkit-app-region:no-drag;user-select:text;-webkit-user-select:text;cursor:text}
+	::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#444;border-radius:6px}
+    </style></head><body>
+	<div id="bubbleWrapper"><div id="bubble"><div class="icon" id="closeBtn" title="Close"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4L4 12"/></svg></div><div id="countdown" aria-hidden="true"></div><div class="icon" id="gear" title="Settings"><svg viewBox="0 0 20 20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 6h14M3 10h14M3 14h14"/></svg></div><span id="bubbleContent">Waiting for selection...</span><div id="resizeHandle" title="Drag to resize"></div></div></div>
+<script>
+	const bubble = document.getElementById('bubble');
+	const bubbleContent = document.getElementById('bubbleContent');
+	const gear = document.getElementById('gear');
+	const closeBtn = document.getElementById('closeBtn');
+	const countdownEl = document.getElementById('countdown');
+	// Manual sizing state
+	let userManualWidth = null; // when set, overrides automatic width calculation
+	let userManualHeight = null; // (currently unused) prevents ReferenceError in adjustSize
+	// Vertical size now purely automatic (no manual height or scroll)
+	function formatCombo(e){
+		let parts=[];
+		if(e.metaKey) parts.push('Command');
+		if(e.ctrlKey) parts.push('Control');
+		if(e.altKey) parts.push('Alt');
+		if(e.shiftKey) parts.push('Shift');
+		let key = e.key;
+		// Normalize common keys to Electron accelerator tokens
+		if(key === ' ') key = 'Space';
+		if(key === 'Escape') key = 'Esc';
+		if(key.startsWith('Arrow')) key = key.replace('Arrow',''); // ArrowLeft -> Left
+		if(/^F\d{1,2}$/.test(key)) { /* keep function key */ }
+		else if(key.length===1){ key = key.toUpperCase(); }
+		// Ignore if still a pure modifier
+		if(['Control','Shift','Alt','Meta','Command'].includes(key)) return '';
+		parts.push(key);
+		return parts.join('+');
+	}
+	// --- State ---
+	let lastClipboardText = '';
+	let suppressResize = false; // prevent growth animation
+	const resizeHandle = document.getElementById('resizeHandle');
+	// Inject minimal styles for resize handle (kept inside script to avoid extra padding in layout calc)
+	const style = document.createElement('style');
+	style.textContent = `#resizeHandle{position:absolute;width:16px;height:16px;right:10px;bottom:10px;cursor:nwse-resize;-webkit-app-region:no-drag;opacity:.28;border-radius:4px}
+    #resizeHandle:after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 0 55%,var(--fg) 55% 70%,transparent 70%);opacity:.8}
+    #bubble:hover #resizeHandle{opacity:.6}`;
+	document.head.appendChild(style);
+
+	let lastSentW = 0, lastSentH = 0, adjustQueued = false, ignoring = false, lastAdjustTs = 0;
+	// Compute extra height based on markdown structural elements (#, ##, list items, etc.)
+	function computeMarkupHeightBonus(){
+		const root = bubbleContent;
+		if(!root) return 0;
+		let bonus = 0;
+		// Headings: progressively smaller bonus for deeper levels
+		const h1 = root.querySelectorAll('h1').length; bonus += h1 * 6;
+		const h2 = root.querySelectorAll('h2').length; bonus += h2 * 5;
+		const h3 = root.querySelectorAll('h3').length; bonus += h3 * 4;
+		const h4 = root.querySelectorAll('h4').length; bonus += h4 * 3;
+		const h5 = root.querySelectorAll('h5').length; bonus += h5 * 2;
+		const h6 = root.querySelectorAll('h6').length; bonus += h6 * 2;
+		// List items (unordered + ordered)
+		const liCount = root.querySelectorAll('li').length; bonus += liCount * 2; // small per-item padding
+		// Blockquotes
+		const bq = root.querySelectorAll('blockquote').length; bonus += bq * 6;
+		// Code blocks
+		const pre = root.querySelectorAll('pre').length; bonus += pre * 14;
+		// Horizontal rules
+		const hrs = root.querySelectorAll('hr').length; bonus += hrs * 4;
+		// Clamp to a reasonable maximum so extremely large docs don't explode height
+		return Math.min(320, bonus);
+	}
+	// Compute ideal width using canvas text metrics (accounts for list markers & heading lines)
+	function computeIdealWidth(){
+		const maxW = 860, minW = 220;
+		const text = (bubbleContent.innerText||'').replace(/\r\n/g,'\n');
+		const rawLines = text.split(/\n/);
+		const lines = rawLines.filter(l=> l.trim().length>0);
+		if(!lines.length) return 320;
+		const cvs = computeIdealWidth._cvs || (computeIdealWidth._cvs = document.createElement('canvas'));
+		computeIdealWidth._cvs = cvs;
+		const ctx = cvs.getContext('2d');
+		const cs = getComputedStyle(bubble);
+		ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+		const widths=[]; let hasCode = !!bubbleContent.querySelector('pre, code'); let listLines=0;
+		for(let l of lines){
+			let trimmed = l.replace(/\s+/g,' ').trimEnd();
+			if(/^(#{1,6})\s/.test(trimmed)){
+				// Headings often shorter visually but should encourage a bit wider width if multiple
+				trimmed = trimmed.replace(/^#{1,6}\s+/,'');
+			}
+			if(/^(?:[-*+]|\d+\.)\s/.test(trimmed)){
+				// Simulate bullet + indentation width
+				listLines++;
+				trimmed = '    '+trimmed; // adds 4 spaces worth
+			}
+			if(trimmed.length===0) continue;
+			widths.push(ctx.measureText(trimmed).width);
+		}
+		if(!widths.length) return 320;
+		widths.sort((a,b)=>a-b);
+		// Use 85th percentile to avoid a single pathological long line blowing width
+		const idx = Math.min(widths.length-1, Math.floor(widths.length*0.85));
+		let ideal = widths[idx];
+		// Bias for many list items (indents consume horizontal space visually not in text width)
+		if(listLines > 3){ ideal += Math.min(80, listLines*4); }
+		// Padding & interior horizontal space already includes 36px (18 left+right) + small fudge
+		ideal += 48; // base padding & extra breathing room
+		// Code blocks prefer a bit more width to reduce wrapping of monospace
+		if(hasCode && ideal < 520) ideal = 520;
+		return Math.min(maxW, Math.max(minW, Math.round(ideal)));
+	}
+	const MIN_INTERVAL = 90; // ms between resize IPCs
+	function adjustSize(force=false){
+		if((suppressResize && !force) || (ignoring && !force)) return;
+		const now = performance.now();
+		if(!force && (now - lastAdjustTs) < 30){ // coalesce very rapid bursts
+			if(!adjustQueued){ setTimeout(()=> adjustSize(force), 28); }
+			return;
+		}
+		if(adjustQueued) return;
+		adjustQueued = true;
+		requestAnimationFrame(()=>{
+			adjustQueued = false;
+			// Respect manual width if user resized
+			if(userManualWidth){ bubble.style.width = userManualWidth + 'px'; }
+			else { bubble.style.width = computeIdealWidth() + 'px'; }
+			const rect = bubble.getBoundingClientRect();
+			const maxW = 860, minW = 220;
+			let targetW = userManualWidth ? Math.round(userManualWidth) : Math.round(Math.min(maxW, Math.max(minW, rect.width)));
+			bubble.style.width = targetW + 'px';
+			// Keep wrapper width synced so shadow radius always matches bubble bounds
+			const wrapper = document.getElementById('bubbleWrapper');
+			if(wrapper){ wrapper.style.width = targetW + 'px'; }
+			let targetH = Math.round(bubble.getBoundingClientRect().height);
+			// Add structural markdown height bonus
+			targetH += computeMarkupHeightBonus();
+			if(targetH < 72) targetH = 80; // minimal aesthetic height
+			if(userManualHeight){ targetH = Math.max(80, Math.min(1200, userManualHeight)); }
+			const wDiff = Math.abs(targetW - lastSentW);
+			const hDiff = Math.abs(targetH - lastSentH);
+			const since = performance.now() - lastAdjustTs;
+			if(force || wDiff > 2 || hDiff > 2){
+				if(force || since > MIN_INTERVAL){
+					ignoring = true; // ignore ResizeObserver echoes briefly
+					clipAI.resize(targetW, targetH);
+					lastSentW = targetW; lastSentH = targetH; lastAdjustTs = performance.now();
+					setTimeout(()=> ignoring = false, 80);
+				}
+			}
+		});
+	}
+	new ResizeObserver(()=> adjustSize()).observe(document.body);
+
+	// --- Manual resize interaction ---
+	let resizing = false; let startX=0, startY=0, startW=0, startH=0;
+	function onMove(e){ if(!resizing) return; const dx = e.clientX - startX; userManualWidth = Math.min(860, Math.max(220, startW + dx)); adjustSize(true); }
+	function onUp(){ if(resizing){ resizing=false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); } }
+	resizeHandle.addEventListener('mousedown', e=>{ e.preventDefault(); resizing=true; startX=e.clientX; const r = bubble.getBoundingClientRect(); startW=r.width; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); });
+	// Double-click resize handle to reset manual width
+	resizeHandle.addEventListener('dblclick', e=>{ e.stopPropagation(); userManualWidth = null; adjustSize(true); });
+	// Gear toggles settings window
+	gear.onclick = ()=> { clipAI.toggleSettings?.(); };
+	closeBtn.onclick = ()=> { bubble.classList.add('fade-out'); setTimeout(()=> clipAI.forceHideNow(), 190); };
+	let mdRenderer = null;
+	let mdLoading = null;
+	let markdownMode = 'full'; // 'off' | 'light' | 'full'
+	let autoHideMs = 0; // configured delay from settings
+	let autoHideTimer = null; let hoverPaused = false;
+	let countdownInterval = null; let hideDeadline = 0;
+	let settingsOpen = false;
+	function clearCountdown(){ if(countdownInterval){ clearInterval(countdownInterval); countdownInterval=null; } if(countdownEl){ countdownEl.textContent=''; countdownEl.style.display='none'; }}
+	function renderCountdown(){
+		if(!countdownEl) return;
+		if(settingsOpen){ clearCountdown(); return; }
+		if(!hideDeadline || !autoHideMs){ clearCountdown(); return; }
+		const remaining = Math.max(0, hideDeadline - performance.now());
+		if(remaining <= 0){ clearCountdown(); return; }
+		let secs = remaining/1000;
+		if(secs < 4){ countdownEl.textContent = secs.toFixed(1).replace(/\.0$/,''); }
+		else { countdownEl.textContent = Math.ceil(secs).toString(); }
+		countdownEl.style.display = 'block';
+	}
+	function startCountdown(){
+		if(!countdownEl) return;
+		if(!autoHideMs || hoverPaused){ clearCountdown(); return; }
+		renderCountdown();
+		clearInterval(countdownInterval);
+		countdownInterval = setInterval(()=>{ if(hoverPaused){ return; } renderCountdown(); }, 120);
+	}
+	function scheduleAutoHide(){
+		clearTimeout(autoHideTimer);
+		if(!autoHideMs){ hideDeadline=0; clearCountdown(); return; }
+		if(hoverPaused){ hideDeadline=0; clearCountdown(); return; }
+		hideDeadline = performance.now() + autoHideMs;
+		startCountdown();
+		autoHideTimer = setTimeout(()=>{ if(!bubble.classList.contains('fade-out')){ clearCountdown(); bubble.classList.add('fade-out'); setTimeout(()=> clipAI.hideAfterFade(),190);} }, autoHideMs);
+	}
+	// Lightweight text post-processor to coerce inline bullet output into proper lists
+	function postFormatMarkdown(txt){
+		if(!txt) return txt;
+		// Trim excessive blank lines overall first (keep at most two)
+		txt = txt.replace(/\n{3,}/g,'\n\n');
+		// Count bullet markers
+		const bulletMatches = txt.match(/\*\s+[A-Za-z]/g) || [];
+		const hasNewlineBullets = /(\n\*\s)/.test(txt);
+		// Case 1: inline bullets like '* Item one * Item two * Item three'
+		if(!hasNewlineBullets && bulletMatches.length >= 2){
+			// Strip leading bullet then split on subsequent bullet markers
+			const cleaned = txt.replace(/^\s*\*\s+/,'');
+			const rawItems = cleaned.split(/\s*\*\s+/).map(s=> s.trim()).filter(Boolean);
+			const items = rawItems.map(i=>{
+				// Bold leading label up to colon/dash if present
+				return i.replace(/^([A-Z][A-Za-z0-9 ]{0,24})(?:\s*[:\-])\s+/,(m,label)=> `**${label}:** `);
+			});
+			return items.map(i=>'* '+i).join('\n');
+		}
+		// Case 2: bullets already multiline -> just ensure bold labels
+		if(hasNewlineBullets){
+			return txt.replace(/(^|\n)\*\s+([A-Z][A-Za-z0-9 ]{0,24})(:)(?=\s)/g,(m,pre,label,col)=> `${pre}* **${label}:**`);
+		}
+		// Case 3: labeled paragraphs without bullets -> convert if multiple labels
+		const labelRegex = /(Problem|Approach|Outcome|Cause|Effect|Result|Summary)\s*:/gi;
+		let labelCount=0; txt.replace(labelRegex,()=>{labelCount++; return '';});
+		if(labelCount>=2){
+			const converted = txt.replace(labelRegex,'\n* **$1:**').replace(/^\n+/,'');
+			return converted;
+		}
+		return txt;
+	}
+
+	// Opportunistic early list -> HTML conversion before markdown-it is loaded (for instant feedback)
+	function quickBulletHtml(txt){
+		// Early convert simple inline asterisk bullet patterns before markdown-it loads
+		// Accept either inline "* Item * Item" or already newline separated but markdown not yet parsed
+		const bulletish = txt.match(/\*\s+[^*]/g)||[];
+		if(bulletish.length>=2){
+			const pf = postFormatMarkdown(txt);
+			const lines = pf.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+			if(lines.length>=2 && lines.every(l=>/^\*\s+/.test(l))){
+				return '<ul>'+ lines.map(l=>'<li>'+ basicInlineFormat( escapeHtml( l.replace(/^\*\s+/,'') ) ) +'</li>').join('') + '</ul>';
+			}
+		}
+		return null;
+	}
+	// Minimal safe HTML escape
+	function escapeHtml(s){ return s.replace(/[&<>]/g,c=> c==='&'?'&amp;':c==='<'?'&lt;':'&gt;'); }
+	// Tiny inline markdown formatter (bold **, italic *, inline code `) for pre-markdown-it phase
+	function basicInlineFormat(s){
+		// Strong first to avoid conflicts; avoid matching across newlines
+		// Use negative lookbehind for escaped asterisks (not exhaustive but lightweight)
+		let out = s;
+		// Bold **text**
+		out = out.replace(/\*\*([^*\n][^\n]*?)\*\*/g,'<strong>$1</strong>');
+		// Italic *text* (not preceded/followed by *)
+		out = out.replace(/(^|\s)\*([^*\n][^\n]*?)\*(?=\s|[.,;!?)]|$)/g,(m,prefix,inner)=> prefix+'<em>'+inner+'</em>');
+		// Inline code `code`
+		out = out.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+		return out;
+	}
+	// Lightweight math: convert a^2, a^10, a_i, a_{ij} to unicode superscripts/subscripts (limited set) outside code/pre tags
+	function applyLightMath(root){
+		// Extended mappings leveraging available Unicode superscript/subscript glyphs.
+		const supers = {
+			'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹',
+			'+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','n':'ⁿ','i':'ⁱ',
+			'a':'ᵃ','b':'ᵇ','c':'ᶜ','d':'ᵈ','e':'ᵉ','f':'ᶠ','g':'ᵍ','h':'ʰ','j':'ʲ','k':'ᵏ','l':'ˡ','m':'ᵐ','o':'ᵒ','p':'ᵖ','r':'ʳ','s':'ˢ','t':'ᵗ','u':'ᵘ','v':'ᵛ','w':'ʷ','x':'ˣ','y':'ʸ','z':'ᶻ',
+			'A':'ᴬ','B':'ᴮ','D':'ᴰ','E':'ᴱ','G':'ᴳ','H':'ᴴ','I':'ᴵ','J':'ᴶ','K':'ᴷ','L':'ᴸ','M':'ᴹ','N':'ᴺ','O':'ᴼ','P':'ᴾ','R':'ᴿ','T':'ᵀ','U':'ᵁ','V':'ⱽ','W':'ᵂ',
+			// Selected Greek (modifier letters / phonetic extensions)
+			'α':'ᵅ','β':'ᵝ','γ':'ᵞ','δ':'ᵟ','φ':'ᵠ','χ':'ᵡ','ρ':'ᵨ'
+		};
+		const subs = {
+			'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉',
+			'+':'₊','-':'₋','=':'₌','(':'₍',')':'₎',
+			'a':'ₐ','e':'ₑ','o':'ₒ','x':'ₓ','h':'ₕ','k':'ₖ','l':'ₗ','m':'ₘ','n':'ₙ','p':'ₚ','s':'ₛ','t':'ₜ','i':'ᵢ','r':'ᵣ','u':'ᵤ','v':'ᵥ',
+			'j':'ⱼ','β':'ᵦ','γ':'ᵧ','ρ':'ᵨ','φ':'ᵩ','χ':'ᵪ'
+		};
+		function mapSeq(seq, table){
+			return seq.split('').map(c=> table[c] || c).join('');
+		}
+		const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+		const updates=[];
+		while(walker.nextNode()){
+			const node = walker.currentNode;
+			const parent = node.parentElement;
+			if(!parent) continue;
+			const tag = parent.tagName;
+			if(/^(CODE|PRE|SCRIPT|STYLE)$/i.test(tag)) continue;
+			let txt = node.nodeValue;
+			if(!/[\^_]/.test(txt)) continue;
+			let out = txt;
+			// Curly braces first for exponents and subscripts
+			out = out.replace(/([A-Za-z0-9)\]])\^\{([^}]{1,10})\}/g,(m,base,exp)=> base + mapSeq(exp, supers));
+			out = out.replace(/([A-Za-z0-9)\]])_\{([^}]{1,10})\}/g,(m,base,sub)=> base + mapSeq(sub, subs));
+			// Simple single/group (no braces) limited length
+			out = out.replace(/([A-Za-z0-9)\]])\^([A-Za-z0-9+\-()=]{1,4})/g,(m,base,exp)=> base + mapSeq(exp, supers));
+			out = out.replace(/([A-Za-z0-9)\]])_([A-Za-z0-9]{1,4})/g,(m,base,sub)=> base + mapSeq(sub, subs));
+			if(out !== txt){ updates.push({ node, text: out }); }
+		}
+		updates.forEach(u=>{ u.node.nodeValue = u.text; });
+	}
+	function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s); }); }
+	// Lazy load markdown-it & katex only when first needed
+	async function ensureMarkdown(){
+		if(mdRenderer) return mdRenderer;
+		if(mdLoading) return mdLoading;
+		mdLoading = (async()=>{
+			// Load markdown-it only (math support removed)
+			await loadScript('https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js');
+			if(window.markdownit){
+				mdRenderer = window.markdownit({html:false,linkify:true,breaks:true,typographer:true});
+			}
+			return mdRenderer;
+		})();
+		return mdLoading;
+	}
+	// Render text quickly (plain -> optional quick bullets -> full markdown upgrade)
+	function lightInlineFormat(text){
+		// Bold ** ** and bullets only; keep line breaks
+		let t = text.replace(/\r\n/g,'\n');
+		// Collapse multiple blank lines
+		t = t.replace(/\n{3,}/g,'\n\n');
+		// Bold
+		t = t.replace(/\*\*([^*\n][^\n]*?)\*\*/g,'<strong>$1<\/strong>');
+		// Simple list detection lines starting with - or * or number.
+		const lines = t.split(/\n/);
+		let html=''; let inList=false; let listType='ul';
+		function close(){ if(inList){ html += (listType==='ul'?'</ul>':'</ol>'); inList=false; }}
+		for(const line of lines){
+			let m=line.match(/^\s*[-*]\s+(.*)$/);
+			let om=line.match(/^\s*(\d+)\.\s+(.*)$/);
+			if(m){ if(!inList || listType!=='ul'){ close(); html+='<ul>'; inList=true; listType='ul'; } html+='<li>'+m[1]+'</li>'; }
+			else if(om){ if(!inList || listType!=='ol'){ close(); html+='<ol>'; inList=true; listType='ol'; } html+='<li>'+om[2]+'</li>'; }
+			else { close(); html += line ? '<p>'+line+'</p>' : ''; }
+		}
+		close();
+		return html || escapeHtml(t);
+	}
+	async function setBubbleMarkdown(txt){
+		// Render basic (plain/pre-line) text first, then upgrade to markdown list/formatting when ready
+		const original = txt;
+		if(markdownMode !== 'off'){
+			const formatted = postFormatMarkdown(original);
+			// Collapse ANY number of blank / whitespace-only lines immediately following a heading so spacing is uniform
+			// This ensures user-inserted empty lines don't translate into extra vertical gaps once rendered
+			let compacted = formatted
+				// Convert Windows newlines
+				.replace(/\r\n/g,'\n')
+				// For each heading, swallow following blank lines (even if they have spaces / tabs)
+				.replace(/^(#{1,6}[^\n]*?)\n(?:[\t ]*\n)+/gm,'$1\n')
+				// Also collapse blank lines between consecutive headings (e.g., #.. \n\n ##..)
+				.replace(/(#{1,6}[^\n]*?)\n(?:[\t ]*\n)+(#{1,6}\s)/g,'$1\n$2');
+			// Normalize LaTeX math delimiters if math enabled (markdown-it-katex handles $..$ and $$..$$ reliably)
+			// Math rendering removed; no delimiter normalization
+			// show formatted text (temporarily use pre-line to preserve breaks before markdown parser runs)
+			bubbleContent.style.whiteSpace = 'pre-line';
+			bubbleContent.textContent = compacted; // baseline safe text
+			// Early size so initial window height reflects content structure before full markdown render
+			adjustSize(true);
+			if(markdownMode==='light'){
+				bubbleContent.innerHTML = lightInlineFormat(compacted);
+				bubbleContent.style.whiteSpace='normal';
+				applyLightMath(bubbleContent);
+				adjustSize(true);
+			} else if(!mdRenderer){
+				// attempt quick bullet conversion on formatted
+				const quick = quickBulletHtml(formatted);
+				if(quick){
+					bubbleContent.innerHTML = quick;
+				} else {
+					// Fallback: lightweight markdown features (headers, code blocks, blockquotes, bold/italic/strike, inline code, lists)
+					const escaped = escapeHtml(formatted);
+					let html = escaped;
+					// Code blocks ```lang\n...\n```
+					html = html.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/gi,(m,lang,code)=> `<pre><code data-lang='${lang}'>${escapeHtml(code.trim())}</code></pre>`);
+					// Headings ###### -> # (support levels 1-6)
+					html = html
+						.replace(/^######\s+(.+)$/gm,'<h6>$1</h6>')
+						.replace(/^#####\s+(.+)$/gm,'<h5>$1</h5>')
+						.replace(/^####\s+(.+)$/gm,'<h4>$1</h4>')
+						.replace(/^###\s+(.+)$/gm,'<h3>$1</h3>')
+						.replace(/^##\s+(.+)$/gm,'<h2>$1</h2>')
+						.replace(/^#\s+(.+)$/gm,'<h1>$1</h1>');
+						// Horizontal rules (---, ***, ___ on its own line)
+						html = html.replace(/^(?: {0,3})([-*_])\1{2,}\s*$/gm,'<hr>');
+						// Blockquotes (multi-line). At this stage '>' is escaped to &gt;, so match &gt;.
+						html = html.replace(/(^|\n)(?:&gt; ?[^\n]*\n?)+/g, block => {
+							// Normalize newlines and split lines containing &gt;
+							const lines = block.replace(/^\n/,'').trimEnd().split(/\n/).filter(l=>/^&gt; ?/.test(l));
+							const inner = lines.map(l=> l.replace(/^&gt; ?/,'' )).join('\n');
+							return `\n<blockquote>${inner}</blockquote>`; });
+					// Strikethrough ~~text~~
+					html = html.replace(/~~([^~]+)~~/g,'<del>$1</del>');
+					// Bold **text** (reuse inline format after restoring HTML tags)
+					html = html.replace(/\*\*([^*\n][^\n]*?)\*\*/g,'<strong>$1</strong>');
+					// Italic *text*
+					html = html.replace(/(^|\s)\*([^*\n][^\n]*?)\*(?=\s|[.,;!?)]|$)/g,(m,p,inner)=> p+'<em>'+inner+'</em>');
+					// Inline code `code`
+					html = html.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+					// Nested list builder (unordered & ordered) based on leading spaces
+					function buildNested(lines){
+						// Data structure: each frame is {indent, type, items: [ {content, children: []} ]}
+						const root = [{type:'root', indent:-1, items:[]}];
+						const stack = [root[0]];
+						function openList(type, indent){
+							const list = {type, indent, items:[]};
+							// Attach to parent: if parent last item exists and we increased indent, nest inside that li
+							const parent = stack[stack.length-1];
+							if(parent && parent.type!=='root' && indent > parent.indent){
+								// nest inside last list item
+								const last = parent.items[parent.items.length-1];
+								if(last){
+									last.children = last.children || [];
+									last.children.push(list);
+								}
+							}else{
+								parent.items.push(list);
+							}
+							stack.push(list);
+							return list;
+						}
+						for(const raw of lines){
+							const m = raw.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+							if(!m) continue;
+							const indent = m[1].replace(/\t/g,'    ').length;
+							const type = /\d+\./.test(m[2]) ? 'ol' : 'ul';
+							const content = m[3];
+							// unwind stack until suitable parent
+							while(stack.length>1 && indent < stack[stack.length-1].indent){ stack.pop(); }
+							let current = stack[stack.length-1];
+							if(current.type===type && current.indent===indent){
+								// reuse current list
+							}else if(indent > current.indent){
+								current = openList(type, indent);
+							}else{
+								// same or lesser indent but different type -> find ancestor
+								while(stack.length>1 && (stack[stack.length-1].type!==type || stack[stack.length-1].indent!==indent)){
+									if(stack[stack.length-1].indent < indent) break;
+									stack.pop();
+								}
+								current = stack[stack.length-1];
+								if(current.type!==type || current.indent!==indent){ current = openList(type, indent); }
+							}
+							current.items.push({content, children:[]});
+						}
+						function renderList(list){
+							if(list.type==='root') return list.items.map(renderNode).join('');
+							const tag=list.type; return `<${tag}>${list.items.map(renderNode).join('')}</${tag}>`;
+						}
+						function renderNode(node){
+							if(node.type==='ul' || node.type==='ol') return renderList(node);
+							// list item
+							const nested = (node.children||[]).map(renderList).join('');
+							return `<li>${node.content}${nested}</li>`;
+						}
+						return renderList(root[0]);
+					}
+					if(/^(?:\s*([-*]|\d+\.)\s+)/m.test(html)){
+						const listBlockRe=/((?:^(?:\s*(?:[-*]|\d+\.)\s+.*)\n?)+)/gm;
+						html = html.replace(listBlockRe, (block)=>{
+							const lines = block.split(/\n/).filter(Boolean);
+							return buildNested(lines);
+						});
+					}
+					// Links [text](url)
+					html = html.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+					bubbleContent.innerHTML = html.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+					adjustSize(true);
+				}
+				ensureMarkdown().then(r=>{ if(r){ bubbleContent.innerHTML = r.render(compacted); bubbleContent.style.whiteSpace='normal';
+					// Remove empty paragraphs & tighten consecutive heading spacing post-render
+					bubbleContent.querySelectorAll('p').forEach(p=>{ if(!p.textContent.trim()) p.remove(); });
+					// Normalize blockquotes: remove leading stray '>' or &gt; markers in their inner HTML (edge cases)
+					bubbleContent.querySelectorAll('blockquote').forEach(bq=>{ bq.innerHTML = bq.innerHTML.replace(/(^|\n)[>]|(^|\n)&gt; ?/g,(m,p1)=> p1||''); });
+					// Enforce compact spacing around hr
+					bubbleContent.querySelectorAll('hr').forEach(hr=>{ hr.style.margin='6px 0'; });
+					applyLightMath(bubbleContent);
+					adjustSize(true); } });
+			}else if(markdownMode==='full'){
+				bubbleContent.innerHTML = mdRenderer.render(compacted);
+				// Remove empty / whitespace / <br> only paragraphs that represent swallowed blank lines
+				bubbleContent.querySelectorAll('p').forEach(p=>{ if(!p.textContent.replace(/\u00a0/g,'').trim() || /^\s*<br\s*\/?>\s*$/.test(p.innerHTML.trim())) p.remove(); });
+				// After removing empties, enforce tight spacing between consecutive headings even if blanks existed originally
+				const hs = Array.from(bubbleContent.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+				for(let i=1;i<hs.length;i++){
+					let prev = hs[i-1];
+					// If they are now adjacent siblings we are fine (CSS handles). If not, but only whitespace nodes in between, adjust.
+					let onlyWhitespace=true; let n=prev.nextSibling;
+					while(n && n!==hs[i]){ if(n.nodeType===3 && !n.textContent.trim()){ n=n.nextSibling; continue; } else { onlyWhitespace=false; break; } }
+					if(onlyWhitespace){ hs[i].style.marginTop='2px'; }
+				}
+				bubbleContent.style.whiteSpace='normal';
+				applyLightMath(bubbleContent);
+				adjustSize(true);
+			}
+		}else{
+			bubbleContent.textContent = original;
+			bubbleContent.style.whiteSpace='pre-line';
+		}
+		if(!suppressResize) adjustSize();
+	}
+	// Main inbound result channel
+	clipAI.onSummary(async d=>{ if(d.error){ bubbleContent.textContent='Error: '+d.error; } else { suppressResize=true; if(markdownMode!=='off'){ setBubbleMarkdown(d.summary); } else { bubbleContent.textContent = d.summary; bubbleContent.style.whiteSpace='pre-line'; } }
+	// Cancel fade-out & re-trigger fade-in
+	bubble.classList.remove('fade-out');
+	bubble.classList.remove('appearing'); // restart animation
+	void bubble.offsetWidth; // force reflow
+	bubble.classList.add('appearing');
+		lastClipboardText = d.fullText || d.inputPreview || lastClipboardText || await clipAI.getClipboard();
+		if(lastClipboardText) document.body.classList.add('compact');
+		suppressResize=false; adjustSize(); scheduleAutoHide(); });
+	// Listen for fade-out start from main via injected custom event triggered by preload (ipc forwarded there)
+	if(!window.__clipaiFadeBound){
+		window.__clipaiFadeBound = true;
+		// We can't access ipcRenderer directly (contextIsolation). Preload forwards 'clipai:start-fade-out' to window as a CustomEvent if desired.
+		document.addEventListener('clipai-start-fade-out', ()=>{
+			if(!bubble.classList.contains('fade-out')){
+				bubble.classList.remove('appearing');
+				bubble.classList.add('fade-out');
+				setTimeout(()=> clipAI.hideAfterFade(), 190);
+			}
+		});
+	}
+	// React to auto-hide ms changes broadcast from settings
+	clipAI.onAutoHideMsChanged?.(ms=>{ autoHideMs = ms||0; // restart timer if bubble visible and not fading
+		if(!bubble.classList.contains('fade-out')){ scheduleAutoHide(); }
+	});
+	clipAI.onSettingsOpenChanged?.(open=>{
+		settingsOpen = !!open;
+		if(settingsOpen){ clearCountdown(); }
+		else if(!bubble.classList.contains('fade-out')){ scheduleAutoHide(); }
+	});
+	// Hover pause auto-hide
+	bubble.addEventListener('mouseenter', ()=>{ hoverPaused = true; clearTimeout(autoHideTimer); hideDeadline=0; renderCountdown(); });
+	bubble.addEventListener('mouseleave', ()=>{ hoverPaused = false; scheduleAutoHide(); });
+	// React to markdown toggle changes in real-time
+	clipAI.onMarkdownChanged?.(enabled=>{ markdownMode = enabled? 'full':'off'; const raw = bubbleContent.textContent || bubbleContent.innerText || ''; if(markdownMode==='off'){ const tmp=document.createElement('div'); tmp.innerHTML = bubbleContent.innerHTML; bubbleContent.textContent = tmp.textContent || raw; bubbleContent.style.whiteSpace='pre-line'; adjustSize(true);} else { setBubbleMarkdown(raw); } });
+	clipAI.onMarkdownModeChanged?.(mode=>{ markdownMode = mode; const raw = bubbleContent.textContent || bubbleContent.innerText || ''; if(mode==='off'){ const tmp=document.createElement('div'); tmp.innerHTML=bubbleContent.innerHTML; bubbleContent.textContent = tmp.textContent || raw; bubbleContent.style.whiteSpace='pre-line'; adjustSize(true);} else { setBubbleMarkdown(raw); } });
+	(async()=>{ const cfg = await clipAI.getConfig(); ['light','midnight','forest','rose','amber','contrast'].forEach(c=> document.body.classList.remove(c)); if(cfg.theme && cfg.theme!=='dark') document.body.classList.add(cfg.theme); markdownMode = cfg.markdownMode || (cfg.markdownEnabled===false?'off':'full'); autoHideMs = cfg.autoHideMs || 0; adjustSize(); })();
+	// Ensure a non-zero initial size while waiting for first summary (no internal scrolling)
+	window.addEventListener('load', ()=> setTimeout(()=> adjustSize(true), 30));
+	// Theme change broadcast
+	clipAI.onThemeChanged?.(t=>{ ['light','midnight','forest','rose','amber','contrast'].forEach(c=> document.body.classList.remove(c)); if(t && t!=='dark') document.body.classList.add(t); });
+</script>
+</body></html>

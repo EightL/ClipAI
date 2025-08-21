@@ -1,0 +1,268 @@
+<!doctype html><html><head><meta charset="utf-8" />
+<title>ClipAI Settings</title>
+<style>
+  :root{--bg:#ffffff;--fg:#1b2733;--panel:#f5f8fa;--panel-alt:#ffffff;--border:#d6dee4;--accent:#2563eb;--accent-fg:#fff;--field:#eef3f6;--field-border:#d3dde3;--danger:#ff4f5d;--radius:22px}
+  body.dark{--bg:#101418;--fg:#f5f7fa;--panel:#182028;--panel-alt:#141b21;--border:#27323a;--accent:#4f9cff;--field:#1f2a33;--field-border:#33424c}
+  body.midnight{--bg:#0b0f17;--fg:#e4ecf5;--panel:#121926;--panel-alt:#0e151f;--border:#1f2b3a;--accent:#5b8fff;--field:#182233;--field-border:#27354a}
+  body.forest{--bg:#0f1613;--fg:#e2f5ec;--panel:#16231d;--panel-alt:#14211b;--border:#1f3328;--accent:#34c482;--field:#1b2d23;--field-border:#254233}
+  body.rose{--bg:#1c1014;--fg:#fde8ef;--panel:#26171d;--panel-alt:#221318;--border:#3a222a;--accent:#ff4f8b;--field:#2d1c23;--field-border:#442832}
+  body.amber{--bg:#191307;--fg:#fff3d6;--panel:#241c0d;--panel-alt:#20180c;--border:#3a2b14;--accent:#f4b21a;--field:#2b210f;--field-border:#423016}
+  body.contrast{--bg:#000;--fg:#fff;--panel:#000;--panel-alt:#111;--border:#555;--accent:#ffdd33;--field:#0d0d0d;--field-border:#555}
+    main, .preset-toolbar { background: var(--bg) !important; color: var(--fg) !important; }
+  html,body{margin:0;padding:0;font:14px system-ui;background:var(--bg)!important;color:var(--fg)!important;height:100%;min-height:100vh;-webkit-font-smoothing:antialiased}
+  main{padding:26px 32px 56px;max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+  h1{font-size:22px;margin:0;font-weight:650;letter-spacing:.4px}
+  h2{font-size:14px;margin:0 0 10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;opacity:.7}
+  button{font:600 13px system-ui;border-radius:10px;cursor:pointer;transition:.16s background,color,border,box-shadow;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--field);color:var(--fg);border:1px solid var(--field-border)}
+  button:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);box-shadow:0 4px 18px -6px #0008}
+  button:active{transform:translateY(1px)}
+  .btn-icon{width:34px;justify-content:center;padding:8px}
+  input,select,textarea{background:var(--field);color:var(--fg);border:1px solid var(--field-border);padding:10px 12px;border-radius:10px;font:13px system-ui;font-weight:500;width:100%;outline:none;transition:.16s border,box-shadow,background}
+  textarea{min-height:84px;resize:vertical;line-height:1.35}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  #presets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:26px}
+  .preset-card{background:var(--panel-alt);border:1px solid var(--border);border-radius:22px;padding:18px 18px 20px;display:flex;flex-direction:column;gap:14px;position:relative;box-shadow:0 6px 26px -14px #0008;transition:.18s border,background,box-shadow}
+  .preset-card:hover{border-color:var(--accent);box-shadow:0 10px 34px -18px #000b}
+  .preset-card-header{display:flex;align-items:center;gap:12px}
+  .preset-name{flex:1;background:var(--field);border:1px solid var(--field-border);padding:10px 12px;font:600 13px system-ui;border-radius:12px;letter-spacing:.3px}
+  .preset-name:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .preset-hotkey{white-space:nowrap}
+  .preset-card-body{position:relative}
+  .preset-prompt{width:100%;background:var(--field);border:1px solid var(--field-border);border-radius:14px;padding:12px 14px;font:500 13px system-ui;line-height:1.35;min-height:110px;resize:vertical;box-sizing:border-box}
+  .preset-prompt:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .preset-card-footer{display:flex;justify-content:flex-end;align-items:center;margin-top:2px;gap:10px;font-size:11px}
+  .preset-toolbar{position:static;background:var(--bg);padding:10px 4px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;border-bottom:1px solid var(--border);}
+  .preset-toolbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .hotkey-btn{background:var(--field);border:1px dashed var(--field-border);padding:10px 14px;font:600 12px system-ui;border-radius:10px;text-align:center;cursor:pointer;user-select:none;min-width:128px}
+  .hotkey-btn.recording{background:var(--accent);color:var(--accent-fg);border-style:solid;border-color:var(--accent)}
+  .delete-btn{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.15);border:0;color:#ff4f5d;width:32px;height:32px;border-radius:12px;font-size:16px;display:none;align-items:center;justify-content:center}
+  .delete-mode .preset-card .delete-btn{display:flex}
+  .delete-btn:hover{background:#ff4f5d;color:#fff}
+  .segmented{display:flex;gap:6px;flex-wrap:wrap}
+  .theme-btn,.memory-btn{background:var(--field);color:var(--fg);border:1px solid var(--field-border);padding:8px 14px;border-radius:8px;font:600 12px system-ui;cursor:pointer;transition:.15s background,color,border}
+  .theme-btn.active,.memory-btn.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+  .two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+  .api-grid{gap:38px}
+  .control-group{display:flex;flex-direction:column;gap:6px}
+  .control-group>span{font-size:11px;font-weight:600;letter-spacing:.5px;opacity:.75;text-transform:uppercase}
+  #status{font-size:12px;min-height:16px;font-weight:600;opacity:.75;margin-top:4px}
+  .filter-box{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);padding:10px 14px;border-radius:14px;flex:1;box-shadow:0 4px 18px -12px #0005}
+  .filter-box input{background:transparent;border:0;padding:0;font-size:13px;font-weight:500;width:100%}
+  .filter-box input:focus{outline:none}
+  .inline-pill{background:var(--field);border:1px solid var(--field-border);padding:4px 8px;border-radius:8px;font-size:11px;font-weight:600;opacity:.75}
+  @media (max-width:760px){ main{padding:22px 18px 50px} .preset-toolbar{gap:10px} }
+</style></head><body>
+<main>
+  <div class="preset-toolbar">
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <h1>Presets</h1>
+      <div style="display:flex;align-items:center;gap:10px;font-size:12px;opacity:.65;">
+        <span>Create, edit & assign hotkeys. First preset is default.</span>
+        <span class="inline-pill" id="presetCountBadge">0</span>
+      </div>
+    </div>
+    <div class="filter-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="presetFilter" placeholder="Filter presets…" aria-label="Filter presets" />
+    </div>
+    <div class="preset-toolbar-actions">
+      <button class="btn-icon" id="addPresetBtn" title="Add preset" style="background:var(--accent);color:var(--accent-fg);border-color:var(--accent);">＋</button>
+      <button class="btn-icon" id="toggleDeleteModeBtn" title="Toggle delete mode" style="color:var(--danger);border:1px solid var(--danger);">🗑</button>
+    </div>
+  </div>
+  <div id="presets-grid"></div>
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:26px 28px 34px;display:flex;flex-direction:column;gap:34px;box-shadow:0 8px 32px -14px #0006;">
+    <div>
+      <h2>API Services</h2>
+  <div class="two-col api-grid" style="align-items:end;">
+        <div class="control-group"><span>Provider</span><select id="provider">
+  <option value="openai">OpenAI</option>
+  <option value="anthropic">Anthropic</option>
+  <option value="gemini" selected>Gemini</option>
+  <option value="groq">Groq</option>
+  <option value="grok">Grok (OpenRouter)</option>
+        </select></div>
+        <div class="control-group"><span>API Key</span><input id="key" type="password" placeholder="..." autocomplete="off" /></div>
+        <div class="control-group"><span>Model</span><select id="model"></select></div>
+        <div class="control-group" style="min-width:140px;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-end;">
+          <button id="saveKey" style="background:var(--accent);color:var(--accent-fg);border-color:var(--accent);width:100%;justify-content:center;">Save</button>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;opacity:.75">
+        <strong>Tip:</strong> To save money, use cheaper models. We recommend <span style="font-weight:600">gemini-2.5-flash-lite</span> right now.
+      </div>
+      <div id="status"></div>
+    </div>
+    <div>
+      <h2>Other</h2>
+      <div class="two-col" style="align-items:start;">
+        <div class="control-group"><span>Theme</span><div id="theme-buttons" class="segmented">
+          <button class="theme-btn" data-theme="light">Light</button>
+          <button class="theme-btn" data-theme="dark">Dark</button>
+          <button class="theme-btn" data-theme="midnight">Midnight</button>
+          <button class="theme-btn" data-theme="contrast">High Contrast</button>
+        </div></div>
+  <!-- Memory Mode removed -->
+        <div class="control-group" style="min-width:200px;"><span>Auto Hide</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="autoHideEnabled" style="width:18px;height:18px;" />
+            <label for="autoHideEnabled" style="font-size:13px;user-select:none;">Enable Auto Hide</label>
+            <input id="autoHideRange" type="range" min="5" max="30" step="1" value="10" list="autoHideTicks" style="flex:1;accent-color:var(--accent);margin-left:18px;">
+            <input id="autoHideNumber" type="number" min="5" max="30" step="1" value="10" style="width:54px;text-align:right;font-weight:600;">
+          </div>
+          <datalist id="autoHideTicks"><option value="5"></option><option value="10"></option><option value="15"></option><option value="20"></option><option value="25"></option><option value="30"></option></datalist>
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;margin-top:4px;">
+            <span id="autoHideDescriptor" style="opacity:.75;font-weight:600;">Disabled (stays open)</span>
+          </div>
+        </div>
+        <div class="control-group" style="min-width:160px;"><span>Markdown</span><select id="markdownMode">
+          <option value="off">Off (plain text)</option>
+          <option value="light">Light (bold & bullets)</option>
+          <option value="full">Full</option>
+        </select></div>
+      </div>
+    </div>
+  </div>
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 32px -14px #0006;">
+    <h2 style="color:var(--danger);">Danger Zone</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+      <div style="font-size:12px;opacity:.8;max-width:720px;">This will remove all saved settings, providers, keys, presets, and restore defaults.</div>
+      <button id="resetAll" style="border:1px solid var(--danger);color:var(--danger);background:transparent;">Reset All Settings</button>
+    </div>
+  </div>
+</main>
+<script>
+  // Elements
+  const providerSel = document.getElementById('provider');
+  const keyInput = document.getElementById('key');
+  const modelSelect = document.getElementById('model');
+  const saveKeyBtn = document.getElementById('saveKey');
+  const status = document.getElementById('status');
+  const themeButtons = document.getElementById('theme-buttons');
+  // memoryButtons removed
+  const markdownModeSel = document.getElementById('markdownMode');
+  const presetsGrid = document.getElementById('presets-grid');
+  const addPresetBtn = document.getElementById('addPresetBtn');
+  const toggleDeleteModeBtn = document.getElementById('toggleDeleteModeBtn');
+  const autoHideEnabled = document.getElementById('autoHideEnabled');
+  const autoHideRange = document.getElementById('autoHideRange');
+  const autoHideNumber = document.getElementById('autoHideNumber');
+  const autoHideDescriptor = document.getElementById('autoHideDescriptor');
+  // Removed quick-toggle button (previously #autoHidePresets)
+  const presetFilter = document.getElementById('presetFilter');
+  const presetCountBadge = document.getElementById('presetCountBadge');
+  const resetAllBtn = document.getElementById('resetAll');
+
+  // State
+  let presets = [];
+  let deleteMode = false;
+  let recordingBtn = null;
+  let filterText = '';
+
+  function formatCombo(e){
+    let parts=[]; if(e.metaKey) parts.push('Command'); if(e.ctrlKey) parts.push('Control'); if(e.altKey) parts.push('Alt'); if(e.shiftKey) parts.push('Shift');
+    let key=e.key; if(key===' ') key='Space'; if(key==='Escape') key='Esc'; if(key.startsWith('Arrow')) key=key.replace('Arrow',''); if(/^F\d{1,2}$/.test(key)){} else if(key.length===1) key=key.toUpperCase(); if(['Control','Shift','Alt','Meta','Command'].includes(key)) return ''; parts.push(key); return parts.join('+');
+  }
+  document.addEventListener('keydown', e=>{
+    if(!recordingBtn) return; e.preventDefault(); e.stopPropagation();
+    const presetId = recordingBtn.dataset.id; const preset = presets.find(p=>p.id===presetId); if(!preset) return;
+    if(e.key==='Escape'){ recordingBtn.textContent = preset.hotkey || 'Set Key Sequence'; recordingBtn.classList.remove('recording'); recordingBtn=null; return; }
+    if(e.key==='Backspace' || e.key==='Delete'){ preset.hotkey=''; recordingBtn.textContent='Set Key Sequence'; recordingBtn.classList.remove('recording'); recordingBtn=null; savePresets(); return; }
+    const combo=formatCombo(e); if(!combo) return; preset.hotkey=combo; recordingBtn.textContent=combo; recordingBtn.classList.remove('recording'); recordingBtn=null; savePresets();
+  });
+
+  function visiblePresets(){
+    if(!filterText) return presets; const ft = filterText.toLowerCase(); return presets.filter(p=> (p.name||'').toLowerCase().includes(ft) || (p.prompt||'').toLowerCase().includes(ft));
+  }
+  function updatePresetCount(){ presetCountBadge.textContent = presets.length; }
+
+  function renderPresets(){
+    presetsGrid.innerHTML=''; presetsGrid.classList.toggle('delete-mode', deleteMode);
+    const list = visiblePresets();
+    if(list.length===0){
+      const ph=document.createElement('div'); ph.textContent = presets.length===0 ? 'Click [+] to add your first preset.' : 'No presets match your filter.'; ph.style.cssText='text-align:center;opacity:.55;padding:28px 0;grid-column:1/-1;font-weight:500;'; presetsGrid.appendChild(ph);
+    } else {
+      list.forEach(p=> presetsGrid.appendChild(createPresetCard(p)) );
+    }
+    toggleDeleteModeBtn.classList.toggle('active', deleteMode);
+    updatePresetCount();
+  }
+  function createPresetCard(preset){
+    const card=document.createElement('div'); card.className='preset-card'; card.dataset.id=preset.id;
+    // Header
+    const header=document.createElement('div'); header.className='preset-card-header';
+    const nameInput=document.createElement('input'); nameInput.type='text'; nameInput.className='preset-name'; nameInput.value=preset.name; nameInput.placeholder='Preset Name'; nameInput.onchange=e=>{ preset.name=e.target.value; savePresets(); };
+    const hotkeyBtn=document.createElement('button'); hotkeyBtn.className='hotkey-btn preset-hotkey'; hotkeyBtn.textContent=preset.hotkey || 'Set Hotkey'; hotkeyBtn.dataset.id=preset.id; hotkeyBtn.onclick=()=>{ if(recordingBtn){ const oldPreset = presets.find(p=>p.id===recordingBtn.dataset.id); recordingBtn.textContent= oldPreset.hotkey || 'Set Hotkey'; recordingBtn.classList.remove('recording'); } recordingBtn=hotkeyBtn; hotkeyBtn.classList.add('recording'); hotkeyBtn.textContent='Press combo…'; };
+    header.appendChild(nameInput); header.appendChild(hotkeyBtn);
+    // Body
+    const body=document.createElement('div'); body.className='preset-card-body';
+    const promptTextarea=document.createElement('textarea'); promptTextarea.className='preset-prompt'; promptTextarea.value=preset.prompt; promptTextarea.placeholder='Describe your own prompt here...'; promptTextarea.onchange=e=>{ preset.prompt=e.target.value; savePresets(); };
+    body.appendChild(promptTextarea);
+    // Footer (optional future actions)
+    const footer=document.createElement('div'); footer.className='preset-card-footer';
+    // Delete button overlays for delete mode
+    const deleteBtn=document.createElement('button'); deleteBtn.className='delete-btn'; deleteBtn.textContent='✕'; deleteBtn.title='Delete preset'; deleteBtn.onclick=()=> removePreset(preset.id);
+    card.appendChild(header); card.appendChild(body); card.appendChild(footer); card.appendChild(deleteBtn); return card;
+  }
+  function addPreset(){ presets.push({ id:`p_${Date.now()}`, name:`Preset ${presets.length+1}`, prompt:'Provide a concise summary.', hotkey:'' }); renderPresets(); savePresets(); }
+  function removePreset(id){ presets = presets.filter(p=>p.id!==id); renderPresets(); savePresets(); }
+  function toggleDeleteMode(){ deleteMode=!deleteMode; renderPresets(); }
+
+  async function savePresets(){ const {conflicts}= await clipAI.setSummaryPresets({presets}); if(conflicts && conflicts.length){ status.textContent = `Warning: Duplicate hotkey "${conflicts[0].hotkey}"`; } else { status.textContent='Presets saved.'; } setTimeout(()=> status.textContent='', 2500); }
+
+  addPresetBtn.onclick=addPreset; toggleDeleteModeBtn.onclick=toggleDeleteMode; presetFilter.addEventListener('input', e=>{ filterText=e.target.value.trim(); renderPresets(); });
+
+  async function saveApiConfig(){ const key=keyInput.value.trim(); const model=modelSelect.value.trim(); if(!key){ status.textContent='API Key cannot be empty.'; return; } await clipAI.saveProviderKey(providerSel.value, key, model||undefined); await clipAI.setActiveProvider(providerSel.value); keyInput.type='password'; status.textContent='Saved successfully!'; setTimeout(()=> status.textContent='', 2000); }
+  async function refreshModelsFor(provider){ const current=modelSelect.value; modelSelect.innerHTML=''; try { const models= await clipAI.listModels(provider); models.forEach(m=>{ const opt=document.createElement('option'); opt.value=m; opt.textContent=m; modelSelect.appendChild(opt); }); if(current && models.includes(current)) modelSelect.value=current; } catch(e){} }
+  async function loadProviderConfig(provider){ const cfg= await clipAI.getConfig(); const pCfg=(cfg.providers && cfg.providers[provider])||{}; keyInput.type='text'; keyInput.value=pCfg.key||''; if(keyInput.value) keyInput.type='password'; const defaults={ openai:'gpt-5-mini', anthropic:'claude-3', gemini:'gemini-2.5-flash-lite', groq:'llama-3.1-70b-versatile', grok:'grok-4'}; const chosen=pCfg.model || defaults[provider] || ''; await refreshModelsFor(provider); if(chosen){ if(![...modelSelect.options].some(o=>o.value===chosen)){ const opt=document.createElement('option'); opt.value=chosen; opt.textContent=chosen; modelSelect.insertBefore(opt, modelSelect.firstChild);} modelSelect.value=chosen; } }
+
+  function updateTheme(theme){ ['light','dark','midnight','contrast'].forEach(t=> document.body.classList.remove(t)); document.body.classList.add(theme); themeButtons.querySelectorAll('.theme-btn').forEach(btn=> btn.classList.toggle('active', btn.dataset.theme===theme)); clipAI.setTheme(theme); }
+  // updateMemoryMode removed (memory feature removed)
+  function describeAutoHide(s){ if(s<=8) return s+'s'; if(s<=15) return s+'s medium'; return s+'s long'; }
+  function updateAutoHide(valSeconds, persist=true){
+    const enabled = autoHideEnabled.checked;
+    autoHideRange.disabled = !enabled;
+    autoHideNumber.disabled = !enabled;
+    let seconds = Math.min(30, Math.max(5, valSeconds|0));
+    autoHideRange.value = seconds;
+    autoHideNumber.value = seconds;
+    autoHideDescriptor.textContent = enabled ? describeAutoHide(seconds) : 'Disabled (stays open)';
+    if(persist){ clipAI.setAutoHideMs(enabled ? seconds*1000 : 0); }
+  }
+
+  saveKeyBtn.onclick=saveApiConfig; keyInput.addEventListener('focus',()=> keyInput.type='text'); keyInput.addEventListener('blur',()=>{ if(keyInput.value) keyInput.type='password'; });
+  themeButtons.addEventListener('click', e=>{ if(e.target.classList.contains('theme-btn')) updateTheme(e.target.dataset.theme); });
+  // memory mode listener removed
+  autoHideEnabled.addEventListener('change', ()=> updateAutoHide(parseInt(autoHideRange.value,10), true));
+  autoHideRange.addEventListener('input', ()=> updateAutoHide(parseInt(autoHideRange.value,10), true));
+  autoHideNumber.addEventListener('input', ()=> updateAutoHide(parseInt(autoHideNumber.value,10)||5, true));
+  // Quick preset toggle removed.
+  markdownModeSel.onchange=()=> clipAI.setMarkdownMode(markdownModeSel.value);
+  providerSel.addEventListener('change', async ()=>{ await clipAI.setActiveProvider(providerSel.value); await loadProviderConfig(providerSel.value); });
+  resetAllBtn?.addEventListener('click', async ()=>{
+    if(!confirm('Reset all settings to defaults? This cannot be undone.')) return;
+    try {
+      await clipAI.resetConfig();
+      // Reload the UI to reflect defaults
+      location.reload();
+    } catch(e){}
+  });
+
+  async function init(){
+    const cfg= await clipAI.getConfig();
+    providerSel.value=cfg.active;
+    await loadProviderConfig(cfg.active);
+    updateTheme(cfg.theme||'light');
+    const enabled = !!cfg.autoHideMs;
+    autoHideEnabled.checked = enabled;
+    let seconds = enabled ? Math.max(5, Math.min(30, Math.round(cfg.autoHideMs/1000))) : 10;
+    updateAutoHide(seconds, false);
+    markdownModeSel.value = cfg.markdownMode || (cfg.markdownEnabled===false ? 'off':'full');
+    const presetData = await clipAI.getSummaryPresets();
+    presets=(presetData.presets||[]).map(p=>({...p}));
+    renderPresets();
+  }
+  clipAI.onThemeChanged?.(theme=> updateTheme(theme));
+  init();
+</script>
+</body></html>
