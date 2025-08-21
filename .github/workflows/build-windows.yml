@@ -1,0 +1,36 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci
+      - name: Build Windows artifacts
+        run: npm run dist:win
+        env:
+          # Uncomment and set if you add code signing cert secrets
+          # CSC_LINK: ${{ secrets.CSC_LINK }}
+          # CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          ELECTRON_BUILDER_SKIP_TAR: true
+          ELECTRON_BUILDER_SKIP_NPM_INSTALL: true
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipai-windows-dist
+          path: dist/*
+          if-no-files-found: error

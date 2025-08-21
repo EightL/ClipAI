@@ -13,7 +13,8 @@
     "dev": "electron .",
     "build": "electron-builder -mwl",
     "package:mac": "electron-packager . ClipAi --platform=darwin --arch=arm64 --overwrite --prune=true",
-    "dist": "electron-builder --mac"
+    "dist": "electron-builder --mac",
+  "dist:win": "electron-builder --win --publish=never"
   },
   "devDependencies": {
     "electron": "29.3.0",
@@ -39,8 +40,11 @@
       "icon": "icons/icon.icns"
     },
     "win": {
-      "target": "nsis",
-      "icon": "icons/icon.ico"
+      "icon": "icons/icon.ico",
+      "target": [
+        { "target": "nsis", "arch": ["x64", "arm64"] },
+        "portable"
+      ]
     },
     "nsis": {
       "oneClick": false,
