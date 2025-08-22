@@ -2,7 +2,7 @@
   <img src="icons/icon.png" width="96" alt="ClipAI icon" /><br/>
   <h1>ClipAI</h1>
   <p><em>Instant AI summaries & explanations for any selected text.</em></p>
-  <strong>Status:</strong> Official 1.0 release
+  <strong>Status:</strong> Official 1.1 release
 	<br/>
 	<!-- Badges -->
 	<p>
@@ -24,17 +24,17 @@ If you like ClipAI, consider supporting development!
 </a>
 
 ## Why ClipAI?
-Reading something dense and just want the gist – fast? ClipAI pops up exactly where you are, grabs your current clipboard text, and processes it with AI to give you a summary or explanation. No copy/paste dance. No browser switching. Low friction = you actually use it.
+Reading something dense and just want the gist – fast? ClipAI pops up exactly where you are, auto‑copies your current selection, and processes it with AI to give you a summary or explanation. No manual copy/paste. No browser switching. Low friction = you actually use it.
 
 ## Core Features
 * Multi‑provider: OpenAI, Gemini, Anthropic, Groq, Grok (OpenRouter) – bring your own keys.
 * One hotkey -> popup -> summary. Press again to hide.
-* Uses your clipboard text: select any text, copy it, and hit the hotkey to get instant AI output.
+* Auto‑copies your selection: select text and hit the hotkey to get instant AI output (no manual copy needed).
 * Prompt presets + your own custom instructions. Default preset returns ≤3 Markdown‑formatted sentences.
 * Markdown rendering with optional modes: Off, Light, or Full.
 * Themes: Light (default), Dark, Midnight, Forest, Rose, Amber, High Contrast.
 * Auto‑hide timer with subtle countdown (optional).
-* Settings include a Danger Zone to reset all app settings instantly.
+* Auto Context Building (optional): remember active document context to improve summaries.
 * Keys stored locally in `userData/config.json` only – never proxied.
 
 ## Simple Clean Text Bubble
@@ -45,6 +45,9 @@ Reading something dense and just want the gist – fast? ClipAI pops up exactly 
 
 ## Customize To Your Preferences
 ![settings](images/ClipAISettings1.png)
+
+## Auto‑copy Selection (no manual copy)
+![auto-copy](images/ClipAI_autocopy.png)
 
 ## Quick Start
 1. Install dependencies:
@@ -68,6 +71,9 @@ Theme | Pick Light/Dark/Midnight/Forest/Rose/Amber/Contrast.
 Markdown Mode | Off, Light (bold & bullets), or Full markdown.
 Auto Hide | Optional timer with live countdown.
 Hotkeys | Record summarize/explain shortcuts (must include a non‑modifier key).
+Auto Copy Selection | Automatically copy the current selection before summarizing (recommended).
+Auto Context Building | Maintain background context from the active document session to improve results.
+Unlimited Input | Allow larger inputs when needed (may use more tokens).
 Prompt Presets | Use the defaults or write your own.
 Danger Zone | Reset all settings to factory defaults.
 

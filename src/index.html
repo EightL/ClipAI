@@ -14,7 +14,7 @@
 	body{font:16px system-ui;background:transparent;color:var(--fg);-webkit-user-select:none;user-select:none;margin:0;padding:0;min-width:360px;max-width:1100px;-webkit-app-region:drag;position:relative;display:block}
 	/* Outer wrapper carries shadow so its blur follows radius cleanly */
 	#bubbleWrapper{position:relative;display:inline-block;border-radius:28px;background:transparent;padding:0;margin:0}
-	#bubble{position:relative;overflow:visible;white-space:normal;line-height:1.34;background:var(--panel);padding:18px 18px 20px 18px;border:none;border-radius:22px;font-size:16px;font-weight:500;display:inline-block;width:auto;max-width:860px;min-width:220px;box-sizing:border-box;-webkit-app-region:drag;color:var(--fg);-webkit-user-select:none;user-select:none;word-wrap:break-word}
+	#bubble{position:relative;overflow:visible;white-space:normal;line-height:1.34;background:var(--panel);padding:18px 18px 20px 18px;border:none;border-radius:22px;font-size:16px;font-weight:500;display:inline-block;width:auto;max-width:520px;min-width:280px;box-sizing:border-box;-webkit-app-region:drag;color:var(--fg);-webkit-user-select:none;user-select:none;word-wrap:break-word}
 	#bubble.fade-out{opacity:0;transform:translateY(-4px) scale(.985);transition:opacity .18s ease, transform .18s ease;}
 	#bubble:not(.fade-out){transition:opacity .12s ease, transform .18s ease;}
 	body.light #bubble,body.midnight #bubble,body.forest #bubble,body.rose #bubble,body.amber #bubble,body.contrast #bubble{background:var(--panel);color:var(--fg)}
@@ -137,7 +137,7 @@
 	}
 	// Compute ideal width using canvas text metrics (accounts for list markers & heading lines)
 	function computeIdealWidth(){
-		const maxW = 860, minW = 220;
+		const maxW = 520, minW = 280;
 		const text = (bubbleContent.innerText||'').replace(/\r\n/g,'\n');
 		const rawLines = text.split(/\n/);
 		const lines = rawLines.filter(l=> l.trim().length>0);
@@ -191,7 +191,7 @@
 			if(userManualWidth){ bubble.style.width = userManualWidth + 'px'; }
 			else { bubble.style.width = computeIdealWidth() + 'px'; }
 			const rect = bubble.getBoundingClientRect();
-			const maxW = 860, minW = 220;
+			const maxW = 520, minW = 280;
 			let targetW = userManualWidth ? Math.round(userManualWidth) : Math.round(Math.min(maxW, Math.max(minW, rect.width)));
 			bubble.style.width = targetW + 'px';
 			// Keep wrapper width synced so shadow radius always matches bubble bounds
@@ -219,7 +219,7 @@
 
 	// --- Manual resize interaction ---
 	let resizing = false; let startX=0, startY=0, startW=0, startH=0;
-	function onMove(e){ if(!resizing) return; const dx = e.clientX - startX; userManualWidth = Math.min(860, Math.max(220, startW + dx)); adjustSize(true); }
+	function onMove(e){ if(!resizing) return; const dx = e.clientX - startX; userManualWidth = Math.min(520, Math.max(280, startW + dx)); adjustSize(true); }
 	function onUp(){ if(resizing){ resizing=false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); } }
 	resizeHandle.addEventListener('mousedown', e=>{ e.preventDefault(); resizing=true; startX=e.clientX; const r = bubble.getBoundingClientRect(); startW=r.width; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); });
 	// Double-click resize handle to reset manual width
@@ -234,6 +234,12 @@
 	let autoHideTimer = null; let hoverPaused = false;
 	let countdownInterval = null; let hideDeadline = 0;
 	let settingsOpen = false;
+	let textAppearanceSettings = {
+		fontFamily: 'system-ui',
+		fontSize: 16,
+		lineHeight: 1.34,
+		letterSpacing: 0
+	};
 	function clearCountdown(){ if(countdownInterval){ clearInterval(countdownInterval); countdownInterval=null; } if(countdownEl){ countdownEl.textContent=''; countdownEl.style.display='none'; }}
 	function renderCountdown(){
 		if(!countdownEl) return;
@@ -260,6 +266,39 @@
 		hideDeadline = performance.now() + autoHideMs;
 		startCountdown();
 		autoHideTimer = setTimeout(()=>{ if(!bubble.classList.contains('fade-out')){ clearCountdown(); bubble.classList.add('fade-out'); setTimeout(()=> clipAI.hideAfterFade(),190);} }, autoHideMs);
+	}
+	
+	// Apply text appearance settings to the bubble
+	function applyTextAppearance(settings) {
+		if (!settings) return;
+		
+		// Update the settings object
+		Object.assign(textAppearanceSettings, settings);
+		
+		// Apply font family
+		if (settings.fontFamily !== undefined) {
+			bubble.style.fontFamily = settings.fontFamily;
+		}
+		
+		// Apply font size
+		if (settings.fontSize !== undefined) {
+			bubble.style.fontSize = settings.fontSize + 'px';
+		}
+		
+		
+		// Apply line height
+		if (settings.lineHeight !== undefined) {
+			bubble.style.lineHeight = settings.lineHeight;
+		}
+		
+		// Apply letter spacing
+		if (settings.letterSpacing !== undefined) {
+			bubble.style.letterSpacing = settings.letterSpacing + 'px';
+		}
+		
+		
+		// Trigger resize to accommodate potential size changes
+		adjustSize(true);
 	}
 	// Lightweight text post-processor to coerce inline bullet output into proper lists
 	function postFormatMarkdown(txt){
@@ -610,5 +649,18 @@
 	window.addEventListener('load', ()=> setTimeout(()=> adjustSize(true), 30));
 	// Theme change broadcast
 	clipAI.onThemeChanged?.(t=>{ ['light','midnight','forest','rose','amber','contrast'].forEach(c=> document.body.classList.remove(c)); if(t && t!=='dark') document.body.classList.add(t); });
+	
+	// Text appearance change listener
+	clipAI.onTextAppearanceChanged?.(settings => {
+		applyTextAppearance(settings);
+	});
+	
+	// Initialize text appearance settings
+	(async () => {
+		const cfg = await clipAI.getConfig();
+		if (cfg.textAppearance) {
+			applyTextAppearance(cfg.textAppearance);
+		}
+	})();
 </script>
 </body></html>

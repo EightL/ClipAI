@@ -20,12 +20,21 @@ const api = {
   listModels: (provider) => ipcRenderer.invoke('clipai:list-models', provider),
   getSummaryPresets: () => ipcRenderer.invoke('clipai:get-summary-presets'),
   resetConfig: () => ipcRenderer.invoke('clipai:reset-config'),
+  resetPreferences: () => ipcRenderer.invoke('clipai:reset-preferences'),
   setSummaryPresets: (data) => ipcRenderer.invoke('clipai:set-summary-presets', data),
+  getDocumentSessions: () => ipcRenderer.invoke('clipai:get-document-sessions'),
+  setDocumentSessions: (sessions) => ipcRenderer.invoke('clipai:set-document-sessions', sessions),
+  setActiveDocumentSession: (session) => ipcRenderer.invoke('clipai:set-active-document-session', session),
+  setUnlimitedInput: (enabled) => ipcRenderer.invoke('clipai:set-unlimited-input', enabled),
+  setAutoContextBuilding: (enabled) => ipcRenderer.invoke('clipai:set-auto-context-building', enabled),
+  setMaxInputChars: (chars) => ipcRenderer.invoke('clipai:set-max-input-chars', chars),
+  setSessionContext: (sessionId, insights) => ipcRenderer.invoke('clipai:set-session-context', sessionId, insights),
   hideWindow: () => ipcRenderer.invoke('clipai:hide-window'),
   hideAfterFade: () => ipcRenderer.invoke('clipai:hide-after-fade'),
   setAutoHideMs: (ms) => ipcRenderer.invoke('clipai:set-auto-hide-ms', ms),
   autoHideHover: (state) => ipcRenderer.invoke('clipai:auto-hide-hover', state),
   forceHideNow: () => ipcRenderer.invoke('clipai:force-hide-now'),
+  setTextAppearance: (settings) => ipcRenderer.invoke('clipai:set-text-appearance', settings),
   markOnboardingComplete: () => ipcRenderer.invoke('clipai:mark-onboarded'),
   onSummary: (cb) => { ipcRenderer.removeAllListeners('clipai:summary'); ipcRenderer.on('clipai:summary', (_, payload)=> cb && cb(payload)); },
   onThemeChanged: (cb) => { ipcRenderer.removeAllListeners('clipai:theme-changed'); ipcRenderer.on('clipai:theme-changed', (_, theme)=> cb && cb(theme)); },
@@ -35,6 +44,8 @@ const api = {
 };
 
 api.onAutoHideMsChanged = (cb)=>{ ipcRenderer.removeAllListeners('clipai:auto-hide-ms'); ipcRenderer.on('clipai:auto-hide-ms', (_, ms)=> cb && cb(ms)); };
+
+api.onTextAppearanceChanged = (cb)=>{ ipcRenderer.removeAllListeners('clipai:text-appearance-changed'); ipcRenderer.on('clipai:text-appearance-changed', (_, settings)=> cb && cb(settings)); };
 
 // Internal event bridge for fade-out
 ipcRenderer.on('clipai:start-fade-out', ()=>{

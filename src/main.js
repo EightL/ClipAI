@@ -11,6 +11,28 @@ const { spawn } = require('child_process');
 // ------------------------- Constants / Defaults -------------------------
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
 const MAX_TEXT_LEN = 25000; // char limit
+const MODEL_CONTEXT_LIMITS = {
+  // OpenAI models
+  'gpt-4o': 128000,
+  'gpt-4o-mini': 128000,
+  'gpt-4-turbo': 128000,
+  'gpt-4': 8192,
+  'gpt-3.5-turbo': 16385,
+  // Groq models
+  'llama-3.1-70b-versatile': 131072,
+  'llama-3.1-8b-instant': 131072,
+  'mixtral-8x7b-32768': 32768,
+  'gemma-7b-it': 8192,
+  // Gemini models
+  'gemini-1.5-pro': 2000000,
+  'gemini-1.5-flash': 1000000,
+  'gemini-pro': 32768,
+  // Anthropic models
+  'claude-3-5-sonnet-20241022': 200000,
+  'claude-3-opus-20240229': 200000,
+  'claude-3-sonnet-20240229': 200000,
+  'claude-3-haiku-20240307': 200000
+};
 // Removed aggressive memory destruction delay constant (feature removed)
 const MAX_PRESETS = 10; // user-defined presets
 const DEFAULT_SUMMARY_PROMPT = 'Summarize in \u22643 concise sentences. Use Markdown formatting (headers, bold, italic, lists)';
@@ -83,6 +105,16 @@ function loadConfig(){
   if(['mistral','cohere'].includes(cfg.active)) cfg.active = 'openai';
   // Add implicit default summary preset if missing explicit one with main hotkey
   if(!cfg.summaryPresets.some(p=> p.isDefault)){ cfg.summaryPresets.unshift({ id: 'default', name: 'Summary', prompt: DEFAULT_SUMMARY_PROMPT, hotkey: cfg.hotkeys.summarize, isDefault: true }); }
+  // Text appearance settings with defaults
+  cfg.textAppearance = cfg.textAppearance || {
+    fontFamily: 'system-ui',
+    fontSize: 16,
+    lineHeight: 1.34,
+    letterSpacing: 0
+  };
+  cfg.unlimitedInput = cfg.unlimitedInput !== undefined ? cfg.unlimitedInput : false;
+  cfg.autoContextBuilding = cfg.autoContextBuilding !== undefined ? cfg.autoContextBuilding : true;
+  cfg.maxInputChars = cfg.maxInputChars || MAX_TEXT_LEN;
   configCache = cfg;
   return cfg;
 }
@@ -586,8 +618,83 @@ async function runSummary(preset){
   summaryInFlight = true;
   popupWindow.webContents.send('clipai:summary', { summary: 'Working…', inputPreview: selection.slice(0,160) });
   const pCfg = cfg.providers[active] || {};
+  
+  // Build context-aware prompt if there's an active document session
+  let contextualPrompt = preset?.prompt || DEFAULT_SUMMARY_PROMPT;
+  let contextLength = 0;
+  
+  if (cfg.activeDocumentSession) {
+    const session = cfg.activeDocumentSession;
+    const typeEmoji = { book: '📚', paper: '📄', thesis: '🎓', report: '📊', article: '📰' }[session.type] || '📄';
+    const contextInfo = [
+      `Document: ${typeEmoji} "${session.title}"`,
+      session.author ? `Author: ${session.author}` : null,
+      session.notes ? `Context: ${session.notes.slice(0, 200)}` : null // Limit context notes to 200 chars
+    ].filter(Boolean).join(' | ');
+    
+    // Add accumulated session insights
+    const sessionInsights = cfg.sessionContexts?.[session.id] || [];
+    const insightsText = sessionInsights.length > 0 
+      ? `\n\nPrevious insights from this document: ${sessionInsights.join(', ')}`
+      : '';
+    
+    const contextAddition = `
+
+DOCUMENT CONTEXT: ${contextInfo}${insightsText}
+
+Please consider this document context and previous insights when summarizing and explain how this section relates to the broader work.`;
+    
+    contextualPrompt = `${contextualPrompt}${contextAddition}`;
+    contextLength = contextAddition.length;
+  }
+  
+  // Calculate effective max length based on unlimited input setting
+  function getMaxInputLength(provider, model, unlimitedMode = false, contextLength = 0) {
+    if (!unlimitedMode) return cfg.maxInputChars;
+    
+    const modelKey = model || PROVIDER_DEFAULT_MODELS[provider];
+    const contextLimit = MODEL_CONTEXT_LIMITS[modelKey];
+    
+    if (!contextLimit) return MAX_TEXT_LEN; // Fallback to safe limit
+    
+    // Reserve space for system prompt, response, and safety margin
+    // Convert tokens to approximate characters (1 token ≈ 4 chars for most models)
+    const systemPromptTokens = Math.ceil((contextualPrompt.length) / 4);
+    const responseTokens = 600; // max_tokens in API calls
+    const safetyMargin = Math.ceil(contextLimit * 0.1); // 10% safety margin
+    
+    const availableTokens = contextLimit - systemPromptTokens - responseTokens - safetyMargin;
+    return Math.max(5000, Math.floor(availableTokens * 4)); // Ensure minimum 5k chars
+  }
+  
+  const effectiveMaxLength = getMaxInputLength(active, pCfg.model, cfg.unlimitedInput, contextLength);
+  
+  // Apply the effective length limit to the selection
+  const limitedSelection = selection.slice(0, effectiveMaxLength);
+  
+  // Show warning if text was truncated
+  if (selection.length > effectiveMaxLength) {
+    const truncatedChars = selection.length - effectiveMaxLength;
+    const reason = cfg.unlimitedInput ? 'model context limit' : (cfg.activeDocumentSession ? 'document context' : 'safety limit');
+    popupWindow?.webContents.send('clipai:summary', { 
+      summary: `Working… (Text truncated by ${truncatedChars} chars due to ${reason})`, 
+      inputPreview: limitedSelection.slice(0,160) 
+    });
+  }
+  
   try {
-    const summary = await summarizeWithProvider(active, pCfg.key, pCfg.model, preset?.prompt || DEFAULT_SUMMARY_PROMPT, selection);
+    const summary = await summarizeWithProvider(active, pCfg.key, pCfg.model, contextualPrompt, limitedSelection);
+    
+    // Background context extraction if session is active and enabled
+    if (cfg.activeDocumentSession && cfg.autoContextBuilding) {
+      try {
+        await extractAndStoreContext(active, pCfg.key, pCfg.model, limitedSelection, summary, cfg.activeDocumentSession.id);
+      } catch(e) {
+        // Silent fail - don't interrupt user experience
+        console.log('Context extraction failed:', e.message);
+      }
+    }
+    
     if(popupWindow && !popupWindow.isDestroyed()){
   popupWindow.webContents.send('clipai:summary', { summary, fullText: selection });
     }
@@ -597,6 +704,49 @@ async function runSummary(preset){
   popupWindow.webContents.send('clipai:summary', { error: e.message || String(e) });
     }
     summaryInFlight = false;
+  }
+}
+
+// Background context extraction and storage
+async function extractAndStoreContext(provider, key, model, inputText, summary, sessionId) {
+  const contextPrompt = `Extract 2-3 key concepts, themes, or insights from this text and summary. Format as a concise JSON array of strings, each under 50 characters. Focus on concepts that would help understand future sections of this work.
+
+Text: ${inputText.slice(0, 1000)}
+Summary: ${summary}
+
+Respond with only the JSON array, no other text.`;
+
+  try {
+    const response = await summarizeWithProvider(provider, key, model, contextPrompt, '');
+    const concepts = JSON.parse(response.trim());
+    
+    if (Array.isArray(concepts) && concepts.length > 0) {
+      const cfg = loadConfig();
+      if (!cfg.sessionContexts) cfg.sessionContexts = {};
+      if (!cfg.sessionContexts[sessionId]) cfg.sessionContexts[sessionId] = [];
+      
+      // Add new concepts, avoiding duplicates
+      concepts.forEach(concept => {
+        if (typeof concept === 'string' && concept.length < 100) {
+          const exists = cfg.sessionContexts[sessionId].some(existing => 
+            existing.toLowerCase().includes(concept.toLowerCase()) || 
+            concept.toLowerCase().includes(existing.toLowerCase())
+          );
+          if (!exists) {
+            cfg.sessionContexts[sessionId].push(concept);
+          }
+        }
+      });
+      
+      // Keep only last 10 concepts to prevent bloat
+      cfg.sessionContexts[sessionId] = cfg.sessionContexts[sessionId].slice(-10);
+      
+      saveConfig(c => {
+        c.sessionContexts = cfg.sessionContexts;
+      });
+    }
+  } catch(e) {
+    // Silent fail
   }
 }
 
@@ -659,9 +809,104 @@ ipcMain.handle('clipai:reset-config', async ()=>{
   } } catch(e){}
   return { ok:true, config: cfg };
 });
-ipcMain.handle('clipai:set-summary-presets',(_, { presets })=>{
-  const normalized = Array.isArray(presets) ? presets.slice(0,MAX_PRESETS).map(p=>({ id: p.id || ('p_'+Date.now()+Math.random().toString(36).slice(2,6)), name: p.name?.slice(0,48) || 'Preset', prompt: (p.prompt||DEFAULT_SUMMARY_PROMPT).slice(0,1200), hotkey: normalizeAccelerator(p.hotkey||''), isDefault: p.isDefault===true && p.id==='default' })) : [];
+
+ipcMain.handle('clipai:reset-preferences', async ()=>{
   const cfg = loadConfig();
+  // Preserve presets and API keys
+  const preservedPresets = cfg.summaryPresets || [];
+  const preservedProviders = cfg.providers || {};
+  const preservedActive = cfg.active || 'openai';
+  
+  // Reset preferences to defaults while preserving data
+  const newCfg = saveConfig(cfgToUpdate => {
+    // Keep presets and providers
+    cfgToUpdate.summaryPresets = preservedPresets;
+    cfgToUpdate.providers = preservedProviders;
+    cfgToUpdate.active = preservedActive;
+    
+    // Reset all other preferences to defaults
+    cfgToUpdate.theme = 'light';
+    cfgToUpdate.autoHideMs = 0;
+    cfgToUpdate.markdownMode = 'full';
+    cfgToUpdate.autoCopySelection = true;
+    cfgToUpdate.textAppearance = {
+      fontFamily: 'system-ui',
+      fontSize: 16,
+      lineHeight: 1.34,
+      letterSpacing: 0
+    };
+  });
+  
+  // Update shortcuts and broadcast changes
+  registerShortcuts();
+  broadcastTheme(newCfg.theme);
+  
+  // Notify windows of setting changes
+  try { if(popupWindow && !popupWindow.isDestroyed()) {
+    popupWindow.webContents.send('clipai:auto-hide-ms', newCfg.autoHideMs);
+    popupWindow.webContents.send('clipai:text-appearance-changed', newCfg.textAppearance);
+  } } catch(e){}
+  
+  try { if([settingsWindow, onboardingWindow, shortcutHelpWindow].some(w=> w && !w.isDestroyed())){
+    [settingsWindow, onboardingWindow, shortcutHelpWindow].forEach(w=>{ 
+      if(w && !w.isDestroyed()) {
+        w.webContents.send('clipai:markdown-mode-changed', newCfg.markdownMode);
+        w.webContents.send('clipai:text-appearance-changed', newCfg.textAppearance);
+      }
+    });
+  } } catch(e){}
+  
+  return { ok:true, config: newCfg };
+});
+
+// Document Sessions handlers
+ipcMain.handle('clipai:get-document-sessions', ()=>{
+  const cfg = loadConfig();
+  return { 
+    sessions: cfg.documentSessions || [], 
+    activeSession: cfg.activeDocumentSession || null 
+  };
+});
+
+ipcMain.handle('clipai:set-document-sessions', (_, sessions)=>{
+  saveConfig(cfg => { cfg.documentSessions = sessions; });
+  return { ok: true };
+});
+
+ipcMain.handle('clipai:set-active-document-session', (_, session)=>{
+  saveConfig(cfg => { cfg.activeDocumentSession = session; });
+  return { ok: true };
+});
+
+ipcMain.handle('clipai:set-unlimited-input', (_, enabled)=>{
+  saveConfig(cfg => { cfg.unlimitedInput = !!enabled; });
+  return { ok: true };
+});
+
+ipcMain.handle('clipai:set-auto-context-building', (_, enabled)=>{
+  saveConfig(cfg => { cfg.autoContextBuilding = !!enabled; });
+  return { ok: true };
+});
+
+ipcMain.handle('clipai:set-max-input-chars', (event, chars) => {
+  const validChars = Math.max(1000, Math.min(100000, parseInt(chars) || 25000));
+  saveConfig(cfg => { cfg.maxInputChars = validChars; });
+  return { ok: true, chars: validChars };
+});
+
+ipcMain.handle('clipai:set-session-context', (event, sessionId, insights) => {
+  saveConfig(cfg => {
+    if (!cfg.sessionContexts) cfg.sessionContexts = {};
+    cfg.sessionContexts[sessionId] = insights.filter(insight => 
+      insight && typeof insight === 'string' && insight.trim().length > 0 && insight.length < 100
+    );
+  });
+  return { ok: true };
+});
+
+ipcMain.handle('clipai:set-summary-presets',(_, { presets })=>{
+  const cfg = loadConfig();
+  const normalized = Array.isArray(presets) ? presets.slice(0,MAX_PRESETS).map(p=>({ id: p.id || ('p_'+Date.now()+Math.random().toString(36).slice(2,6)), name: p.name?.slice(0,48) || 'Preset', prompt: (p.prompt||DEFAULT_SUMMARY_PROMPT).slice(0,1200), hotkey: normalizeAccelerator(p.hotkey||''), isDefault: p.isDefault===true && p.id==='default' })) : [];
   const def = cfg.summaryPresets.find(p=>p.isDefault) || { id:'default', name:'Summary', prompt:DEFAULT_SUMMARY_PROMPT, hotkey: cfg.hotkeys.summarize, isDefault:true };
   if(!normalized.some(p=> p.isDefault)) normalized.unshift(def);
   const seen = new Map();
@@ -681,6 +926,14 @@ ipcMain.handle('clipai:set-auto-hide-ms',(_,ms)=>{
 });
 ipcMain.handle('clipai:auto-hide-hover',(_,state)=>{ if(state==='enter'){ clearTimeout(popupAutoHideTimer); popupAutoHideTimer=null; } else if(state==='leave'){ startAutoHideTimer(); } return { ok:true }; });
 ipcMain.handle('clipai:force-hide-now',()=>{ finalizeHidePopup(); return { ok:true }; });
+ipcMain.handle('clipai:set-text-appearance',(_,settings)=>{ 
+  const newCfg = saveConfig(cfg=>{ 
+    cfg.textAppearance = cfg.textAppearance || {};
+    Object.assign(cfg.textAppearance, settings);
+  });
+  [popupWindow, settingsWindow].forEach(w=>{ if(w && !w.isDestroyed()) w.webContents.send('clipai:text-appearance-changed', newCfg.textAppearance); });
+  return { ok:true, textAppearance: newCfg.textAppearance }; 
+});
 
 // ------------------------- App Lifecycle -------------------------
 app.whenReady().then(()=>{
