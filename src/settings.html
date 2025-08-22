@@ -120,6 +120,13 @@
           <option value="light">Light (bold & bullets)</option>
           <option value="full">Full</option>
         </select></div>
+        <div class="control-group" style="min-width:200px;"><span>Auto Copy Selection</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="autoCopyEnabled" style="width:18px;height:18px;" />
+            <label for="autoCopyEnabled" style="font-size:13px;user-select:none;">Automatically press Ctrl/Cmd+C before summary</label>
+          </div>
+          <div style="font-size:11px;opacity:.7;margin-top:4px;">If disabled, you must copy manually before using the shortcut.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -163,6 +170,7 @@
   const autoHideNumber = document.getElementById('autoHideNumber');
   const autoHideDescriptor = document.getElementById('autoHideDescriptor');
   // Removed quick-toggle button (previously #autoHidePresets)
+  const autoCopyEnabled = document.getElementById('autoCopyEnabled');
   const presetFilter = document.getElementById('presetFilter');
   const presetCountBadge = document.getElementById('presetCountBadge');
   const resetAllBtn = document.getElementById('resetAll');
@@ -272,6 +280,8 @@
     let seconds = enabled ? Math.max(5, Math.min(30, Math.round(cfg.autoHideMs/1000))) : 10;
     updateAutoHide(seconds, false);
     markdownModeSel.value = cfg.markdownMode || (cfg.markdownEnabled===false ? 'off':'full');
+  autoCopyEnabled.checked = cfg.autoCopySelection !== false; // default true
+  autoCopyEnabled.addEventListener('change', ()=> clipAI.setAutoCopySelection(autoCopyEnabled.checked));
     const presetData = await clipAI.getSummaryPresets();
     presets=(presetData.presets||[]).map(p=>({...p}));
     renderPresets();

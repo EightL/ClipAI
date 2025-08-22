@@ -10,9 +10,9 @@ const { spawn } = require('child_process');
 
 // ------------------------- Constants / Defaults -------------------------
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
-const MAX_TEXT_LEN = 4000; // char limit
+const MAX_TEXT_LEN = 25000; // char limit
 // Removed aggressive memory destruction delay constant (feature removed)
-const MAX_PRESETS = 5; // user-defined presets
+const MAX_PRESETS = 10; // user-defined presets
 const DEFAULT_SUMMARY_PROMPT = 'Summarize in \u22643 concise sentences. Use Markdown formatting (headers, bold, italic, lists)';
 
 // Provider default models (fallbacks when user leaves blank)
@@ -63,6 +63,7 @@ function loadConfig(){
   });
   cfg.active = cfg.active || 'gemini';
   cfg.theme = cfg.theme || 'light';
+  cfg.autoCopySelection = cfg.autoCopySelection !== false; // default true
   // memoryMode removed (was 'normal' | 'aggressive')
   // Auto-hide delay in ms (0 = never). Clamp 0..30000
   if(typeof cfg.autoHideMs !== 'number' || isNaN(cfg.autoHideMs)) cfg.autoHideMs = 0;
@@ -399,16 +400,28 @@ function createTray(){
 async function captureSelectionText(){
   const before = clipboard.readText();
   let selection = '';
+  const cfg = loadConfig();
   try {
-    if(process.platform === 'darwin'){
-      await new Promise((resolve)=>{
-        const osa = spawn('osascript', ['-e','tell application "System Events" to keystroke "c" using {command down}']);
-        osa.on('exit', ()=> resolve());
-      });
-      await new Promise(r=> setTimeout(r, 140));
-      selection = clipboard.readText();
-    } else if(process.platform === 'win32') {
-      selection = before; // simplified fallback
+    if(cfg.autoCopySelection !== false){
+      if(process.platform === 'darwin'){
+        await new Promise((resolve)=>{
+          const osa = spawn('osascript', ['-e','tell application "System Events" to keystroke "c" using {command down}']);
+          osa.on('exit', ()=> resolve());
+        });
+        await new Promise(r=> setTimeout(r, 220));
+        selection = clipboard.readText();
+      } else if(process.platform === 'win32' || process.platform === 'linux') {
+        await new Promise((resolve)=>{
+          const keyCmd = process.platform === 'win32'
+            ? spawn('powershell', ['-Command', '$wshell = New-Object -ComObject wscript.shell; $wshell.SendKeys("^c")'])
+            : spawn('xdotool', ['key', 'ctrl+c']);
+          keyCmd.on('exit', ()=> resolve());
+        });
+        await new Promise(r=> setTimeout(r, 140));
+        selection = clipboard.readText();
+      } else {
+        selection = before;
+      }
     } else {
       selection = before;
     }
@@ -437,7 +450,7 @@ async function summarizeWithProvider(provider, key, model, systemPrompt, userTex
       if(!key) throw new Error('Missing API key');
       url = 'https://api.anthropic.com/v1/messages';
       headers['x-api-key'] = key; headers['anthropic-version'] = '2023-06-01';
-      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], system: finalSystem, max_tokens: 600, messages:[ { role:'user', content: trimmed } ] });
+      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], system: finalSystem, max_tokens: 1000, messages:[ { role:'user', content: trimmed } ] });
       break;
     }
     case 'gemini': {
@@ -600,6 +613,10 @@ function registerShortcuts(){
 }
 
 // ------------------------- IPC Handlers -------------------------
+ipcMain.handle('clipai:set-auto-copy-selection',(_,enabled)=>{
+  saveConfig(cfg=>{ cfg.autoCopySelection = !!enabled; });
+  return { ok:true, enabled: !!enabled };
+});
 ipcMain.handle('clipai:summarize-selection', async ()=>{ const preset = loadConfig().summaryPresets[0]; runSummary(preset); return { ok:true }; });
 ipcMain.handle('clipai:run-preset', async (_, id)=>{ const preset = loadConfig().summaryPresets.find(p=>p.id===id); if(preset) runSummary(preset); return { ok: !!preset }; });
 ipcMain.handle('clipai:save-provider-key', (_, provider, key, model)=>{ saveConfig(cfg=>{ cfg.providers[provider] = cfg.providers[provider] || {}; cfg.providers[provider].key = key; if(model) cfg.providers[provider].model = model; }); return { ok:true }; });

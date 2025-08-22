@@ -11,6 +11,8 @@ const api = {
   setMemoryMode: (mode) => ipcRenderer.invoke('clipai:set-memory-mode', mode),
   setMarkdownEnabled: (enabled) => ipcRenderer.invoke('clipai:set-markdown-enabled', enabled),
   setMarkdownMode: (mode) => ipcRenderer.invoke('clipai:set-markdown-mode', mode),
+  // FIX: Added the missing setAutoCopySelection function to the API
+  setAutoCopySelection: (enabled) => ipcRenderer.invoke('clipai:set-auto-copy-selection', enabled),
   resize: (w,h) => ipcRenderer.invoke('clipai:resize', w, h),
   getClipboard: () => ipcRenderer.invoke('clipai:get-clipboard'),
   openSettings: () => ipcRenderer.invoke('clipai:open-settings'),

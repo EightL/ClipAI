@@ -37,6 +37,15 @@ Reading something dense and just want the gist – fast? ClipAI pops up exactly 
 * Settings include a Danger Zone to reset all app settings instantly.
 * Keys stored locally in `userData/config.json` only – never proxied.
 
+## Simple Clean Text Bubble
+![bubble](images/ClipAIBubble.png)
+
+## Create Your Own Presets = Infinite Use Cases
+![prompt](images/ClipAISettings2.png)
+
+## Customize To Your Preferences
+![settings](images/ClipAISettings1.png)
+
 ## Quick Start
 1. Install dependencies:
 	```bash
