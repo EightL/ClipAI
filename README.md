@@ -34,7 +34,6 @@ Reading something dense and just want the gist – fast? ClipAI pops up exactly 
 * Markdown rendering with optional modes: Off, Light, or Full.
 * Themes: Light (default), Dark, Midnight, Forest, Rose, Amber, High Contrast.
 * Auto‑hide timer with subtle countdown (optional).
-* Auto Context Building (optional): remember active document context to improve summaries.
 * Keys stored locally in `userData/config.json` only – never proxied.
 
 ## Simple Clean Text Bubble
@@ -72,7 +71,6 @@ Markdown Mode | Off, Light (bold & bullets), or Full markdown.
 Auto Hide | Optional timer with live countdown.
 Hotkeys | Record summarize/explain shortcuts (must include a non‑modifier key).
 Auto Copy Selection | Automatically copy the current selection before summarizing (recommended).
-Auto Context Building | Maintain background context from the active document session to improve results.
 Unlimited Input | Allow larger inputs when needed (may use more tokens).
 Prompt Presets | Use the defaults or write your own.
 Danger Zone | Reset all settings to factory defaults.

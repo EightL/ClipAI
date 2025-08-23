@@ -113,8 +113,8 @@ function loadConfig(){
     letterSpacing: 0
   };
   cfg.unlimitedInput = cfg.unlimitedInput !== undefined ? cfg.unlimitedInput : false;
-  cfg.autoContextBuilding = cfg.autoContextBuilding !== undefined ? cfg.autoContextBuilding : true;
   cfg.maxInputChars = cfg.maxInputChars || MAX_TEXT_LEN;
+  cfg.maxOutputTokens = cfg.maxOutputTokens || 800;
   configCache = cfg;
   return cfg;
 }
@@ -150,12 +150,62 @@ function normalizeAccelerator(acc){
     else if(['ctrl','control'].includes(up)) mods.add('Control');
     else if(['alt','option'].includes(up)) mods.add('Alt');
     else if(['shift'].includes(up)) mods.add('Shift');
+    // Handle mouse buttons
+    else if(['leftclick','middleclick','rightclick','mousebutton4','mousebutton5'].includes(up)) key = p;
     else key = p.length === 1 ? p.toUpperCase() : (p.length ? p[0].toUpperCase()+p.slice(1) : '');
   });
   const order = ['CommandOrControl','Control','Alt','Shift'];
   const ordered = order.filter(m=> mods.has(m));
   if(!key) return '';
   return [...ordered, key].join('+');
+}
+
+function formatShortcutWithIcons(shortcut, forDisplay = false){
+  if(!shortcut) return '';
+  const parts = shortcut.split('+');
+  const icons = [];
+  
+  parts.forEach(part => {
+    switch(part) {
+      case 'CommandOrControl':
+        icons.push(process.platform === 'darwin' ? '⌘' : 'Ctrl');
+        break;
+      case 'Command':
+        icons.push('⌘');
+        break;
+      case 'Control':
+        icons.push('Ctrl');
+        break;
+      case 'Alt':
+        icons.push(process.platform === 'darwin' ? '⌥' : 'Alt');
+        break;
+      case 'Shift':
+        icons.push('⇧');
+        break;
+      case 'Space':
+        icons.push('Space');
+        break;
+      case 'leftclick':
+        icons.push('🖱️L');
+        break;
+      case 'middleclick':
+        icons.push('🖱️M');
+        break;
+      case 'rightclick':
+        icons.push('🖱️R');
+        break;
+      case 'mousebutton4':
+        icons.push('🖱️4');
+        break;
+      case 'mousebutton5':
+        icons.push('🖱️5');
+        break;
+      default:
+        icons.push(part);
+    }
+  });
+  
+  return forDisplay ? icons.join(' + ') : icons.join('+');
 }
 
 // ------------------------- Window Creation -------------------------
@@ -287,7 +337,7 @@ function createOnboardingWindow(){
    <p>Instant summaries & explanations for any selected text. Your keys stay local.</p>
    <ul>
      <li>Select and Copy text anywhere.</li>
-     <li>Press <span class='hotkey'>${process.platform==='darwin'?'⌘':'Ctrl'}+Shift+Space</span>.</li>
+     <li>Press <span class='hotkey'>${formatShortcutWithIcons('CommandOrControl+Shift+Space', true)}</span>.</li>
      <li>Popup shows immediately.</li>
      <li>Add custom presets & hotkeys in Settings.</li>
    </ul>
@@ -356,7 +406,7 @@ function createShortcutHelpWindow(){
     webPreferences: { contextIsolation: true, preload: path.join(__dirname,'preload.js'), nodeIntegration: false, sandbox: true }
   });
   const cfg = loadConfig();
-  const rows = cfg.summaryPresets.map(p=> `<tr><td style='padding:4px 8px;border-bottom:1px solid #2a3741;'>${p.name}</td><td style='padding:4px 8px;border-bottom:1px solid #2a3741;'>${p.hotkey||''}</td></tr>`).join('');
+  const rows = cfg.summaryPresets.map(p=> `<tr><td style='padding:4px 8px;border-bottom:1px solid #2a3741;'>${p.name}</td><td style='padding:4px 8px;border-bottom:1px solid #2a3741;'>${formatShortcutWithIcons(p.hotkey, true)||''}</td></tr>`).join('');
   const html = `<!doctype html><html><head><meta charset='utf-8'><title>Shortcuts</title><style>
     body{font:14px system-ui;margin:0;background:#101418;color:#f5f7fa;padding:24px}
     h2{margin:0 0 14px;font-size:18px}
@@ -384,8 +434,6 @@ function finalizeHidePopup(){
   if(!popupWindow || popupWindow.isDestroyed()) return;
   popupWindow.hide();
   popupFading = false;
-  // Still proactively close settings window (memory saving preference) when popup hides
-  try { if(settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.close(); } catch(e){}
   clearTimeout(popupAutoHideTimer); popupAutoHideTimer = null;
 }
 
@@ -475,21 +523,21 @@ async function summarizeWithProvider(provider, key, model, systemPrompt, userTex
       if(!key) throw new Error('Missing API key');
       if(provider==='openai'){ url = 'https://api.openai.com/v1/chat/completions'; headers['Authorization'] = `Bearer ${key}`; }
       if(provider==='groq'){ url = 'https://api.groq.com/openai/v1/chat/completions'; headers['Authorization'] = `Bearer ${key}`; }
-      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], messages:[ { role:'system', content: finalSystem }, { role:'user', content: trimmed } ], temperature: 0.4, max_tokens: 600 });
+      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], messages:[ { role:'system', content: finalSystem }, { role:'user', content: trimmed } ], temperature: 0.4, max_tokens: cfg.maxOutputTokens });
       break;
     }
     case 'anthropic': {
       if(!key) throw new Error('Missing API key');
       url = 'https://api.anthropic.com/v1/messages';
       headers['x-api-key'] = key; headers['anthropic-version'] = '2023-06-01';
-      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], system: finalSystem, max_tokens: 1000, messages:[ { role:'user', content: trimmed } ] });
+      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], system: finalSystem, max_tokens: cfg.maxOutputTokens, messages:[ { role:'user', content: trimmed } ] });
       break;
     }
     case 'gemini': {
       if(!key) throw new Error('Missing API key');
       const m = (model || PROVIDER_DEFAULT_MODELS[provider]).replace(/:generateContent$/,'');
       url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${key}`;
-      body = JSON.stringify({ contents:[{ role:'user', parts:[ { text: `${finalSystem}\n\nINPUT:\n${trimmed}` } ] }], generationConfig:{ temperature:0.4, maxOutputTokens:600 } });
+      body = JSON.stringify({ contents:[{ role:'user', parts:[ { text: `${finalSystem}\n\nINPUT:\n${trimmed}` } ] }], generationConfig:{ temperature:0.4, maxOutputTokens: cfg.maxOutputTokens } });
       break;
     }
     case 'grok': {
@@ -498,7 +546,7 @@ async function summarizeWithProvider(provider, key, model, systemPrompt, userTex
       url = 'https://openrouter.ai/api/v1/chat/completions';
       headers['Authorization'] = `Bearer ${key}`;
       headers['Content-Type'] = 'application/json';
-      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], messages:[ { role:'system', content: finalSystem }, { role:'user', content: trimmed } ] , temperature:0.4, max_tokens:600 });
+      body = JSON.stringify({ model: model || PROVIDER_DEFAULT_MODELS[provider], messages:[ { role:'system', content: finalSystem }, { role:'user', content: trimmed } ] , temperature:0.4, max_tokens: cfg.maxOutputTokens });
       break;
     }
     default:
@@ -632,17 +680,11 @@ async function runSummary(preset){
       session.notes ? `Context: ${session.notes.slice(0, 200)}` : null // Limit context notes to 200 chars
     ].filter(Boolean).join(' | ');
     
-    // Add accumulated session insights
-    const sessionInsights = cfg.sessionContexts?.[session.id] || [];
-    const insightsText = sessionInsights.length > 0 
-      ? `\n\nPrevious insights from this document: ${sessionInsights.join(', ')}`
-      : '';
-    
     const contextAddition = `
 
-DOCUMENT CONTEXT: ${contextInfo}${insightsText}
+DOCUMENT CONTEXT: ${contextInfo}
 
-Please consider this document context and previous insights when summarizing and explain how this section relates to the broader work.`;
+Please consider this document context when summarizing and explain how this section relates to the broader work.`;
     
     contextualPrompt = `${contextualPrompt}${contextAddition}`;
     contextLength = contextAddition.length;
@@ -660,7 +702,7 @@ Please consider this document context and previous insights when summarizing and
     // Reserve space for system prompt, response, and safety margin
     // Convert tokens to approximate characters (1 token ≈ 4 chars for most models)
     const systemPromptTokens = Math.ceil((contextualPrompt.length) / 4);
-    const responseTokens = 600; // max_tokens in API calls
+    const responseTokens = cfg.maxOutputTokens; // max_tokens in API calls
     const safetyMargin = Math.ceil(contextLimit * 0.1); // 10% safety margin
     
     const availableTokens = contextLimit - systemPromptTokens - responseTokens - safetyMargin;
@@ -685,16 +727,6 @@ Please consider this document context and previous insights when summarizing and
   try {
     const summary = await summarizeWithProvider(active, pCfg.key, pCfg.model, contextualPrompt, limitedSelection);
     
-    // Background context extraction if session is active and enabled
-    if (cfg.activeDocumentSession && cfg.autoContextBuilding) {
-      try {
-        await extractAndStoreContext(active, pCfg.key, pCfg.model, limitedSelection, summary, cfg.activeDocumentSession.id);
-      } catch(e) {
-        // Silent fail - don't interrupt user experience
-        console.log('Context extraction failed:', e.message);
-      }
-    }
-    
     if(popupWindow && !popupWindow.isDestroyed()){
   popupWindow.webContents.send('clipai:summary', { summary, fullText: selection });
     }
@@ -707,49 +739,6 @@ Please consider this document context and previous insights when summarizing and
   }
 }
 
-// Background context extraction and storage
-async function extractAndStoreContext(provider, key, model, inputText, summary, sessionId) {
-  const contextPrompt = `Extract 2-3 key concepts, themes, or insights from this text and summary. Format as a concise JSON array of strings, each under 50 characters. Focus on concepts that would help understand future sections of this work.
-
-Text: ${inputText.slice(0, 1000)}
-Summary: ${summary}
-
-Respond with only the JSON array, no other text.`;
-
-  try {
-    const response = await summarizeWithProvider(provider, key, model, contextPrompt, '');
-    const concepts = JSON.parse(response.trim());
-    
-    if (Array.isArray(concepts) && concepts.length > 0) {
-      const cfg = loadConfig();
-      if (!cfg.sessionContexts) cfg.sessionContexts = {};
-      if (!cfg.sessionContexts[sessionId]) cfg.sessionContexts[sessionId] = [];
-      
-      // Add new concepts, avoiding duplicates
-      concepts.forEach(concept => {
-        if (typeof concept === 'string' && concept.length < 100) {
-          const exists = cfg.sessionContexts[sessionId].some(existing => 
-            existing.toLowerCase().includes(concept.toLowerCase()) || 
-            concept.toLowerCase().includes(existing.toLowerCase())
-          );
-          if (!exists) {
-            cfg.sessionContexts[sessionId].push(concept);
-          }
-        }
-      });
-      
-      // Keep only last 10 concepts to prevent bloat
-      cfg.sessionContexts[sessionId] = cfg.sessionContexts[sessionId].slice(-10);
-      
-      saveConfig(c => {
-        c.sessionContexts = cfg.sessionContexts;
-      });
-    }
-  } catch(e) {
-    // Silent fail
-  }
-}
-
 // ------------------------- Shortcut Registration -------------------------
 function clearShortcuts(){ try { globalShortcut.unregisterAll(); } catch(e){} }
 function registerShortcuts(){
@@ -758,6 +747,8 @@ function registerShortcuts(){
   cfg.summaryPresets.forEach(p=>{
     const acc = normalizeAccelerator(p.hotkey);
     if(!acc) return;
+    // Skip mouse button shortcuts for global registration (not supported by Electron globalShortcut)
+    if(acc.includes('click') || acc.includes('mousebutton')) return;
     try { globalShortcut.register(acc, ()=> runSummary(p)); } catch(e){}
   });
 }
@@ -829,6 +820,10 @@ ipcMain.handle('clipai:reset-preferences', async ()=>{
     cfgToUpdate.autoHideMs = 0;
     cfgToUpdate.markdownMode = 'full';
     cfgToUpdate.autoCopySelection = true;
+    // Token and input settings
+    cfgToUpdate.unlimitedInput = false;
+    cfgToUpdate.maxInputChars = MAX_TEXT_LEN; // 25k default
+    cfgToUpdate.maxOutputTokens = 800; // sensible default
     cfgToUpdate.textAppearance = {
       fontFamily: 'system-ui',
       fontSize: 16,
@@ -883,25 +878,16 @@ ipcMain.handle('clipai:set-unlimited-input', (_, enabled)=>{
   return { ok: true };
 });
 
-ipcMain.handle('clipai:set-auto-context-building', (_, enabled)=>{
-  saveConfig(cfg => { cfg.autoContextBuilding = !!enabled; });
-  return { ok: true };
-});
-
 ipcMain.handle('clipai:set-max-input-chars', (event, chars) => {
   const validChars = Math.max(1000, Math.min(100000, parseInt(chars) || 25000));
   saveConfig(cfg => { cfg.maxInputChars = validChars; });
   return { ok: true, chars: validChars };
 });
 
-ipcMain.handle('clipai:set-session-context', (event, sessionId, insights) => {
-  saveConfig(cfg => {
-    if (!cfg.sessionContexts) cfg.sessionContexts = {};
-    cfg.sessionContexts[sessionId] = insights.filter(insight => 
-      insight && typeof insight === 'string' && insight.trim().length > 0 && insight.length < 100
-    );
-  });
-  return { ok: true };
+ipcMain.handle('clipai:set-max-output-tokens', (event, tokens) => {
+  const validTokens = Math.max(100, Math.min(25000, parseInt(tokens) || 800));
+  saveConfig(cfg => { cfg.maxOutputTokens = validTokens; });
+  return { ok: true, tokens: validTokens };
 });
 
 ipcMain.handle('clipai:set-summary-presets',(_, { presets })=>{
@@ -933,6 +919,11 @@ ipcMain.handle('clipai:set-text-appearance',(_,settings)=>{
   });
   [popupWindow, settingsWindow].forEach(w=>{ if(w && !w.isDestroyed()) w.webContents.send('clipai:text-appearance-changed', newCfg.textAppearance); });
   return { ok:true, textAppearance: newCfg.textAppearance }; 
+});
+
+// Expose shortcut formatting function to renderer processes
+ipcMain.handle('clipai:format-shortcut-with-icons', (_, shortcut, forDisplay = false) => {
+  return formatShortcutWithIcons(shortcut, forDisplay);
 });
 
 // ------------------------- App Lifecycle -------------------------

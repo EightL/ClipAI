@@ -3,19 +3,18 @@
 ### Added
 - Auto Copy Selection: automatically copies the current selection before summarization, removing the manual copy step.
 - Sessions: Good for reading long texts/books/articles - Start a new session, add the name and author, and then add notes as you read. AI will remember this context and use it to improve summaries.
-- Auto Context Building toggle now triggers real-time brain button visual updates in Sessions list.
 - Text Appearance settings: Font Family, Font Size, Font Weight, Line Height, Letter Spacing..
-- Custom max input length setting.
+- Custom max input length & output tokens setting.
 - 'Reset to defaults' option - resets all settings to defaults, but keeps the custom presets and API keys.
 
 ### Changed
 - Reshaped the initial popup window to not be so horizontal.
 - Minor UI tweaks
 
-
 ### Fixed
 - Minor UI clumping issues in the sessions row actions.
 - Minor bug fixes.
+
 
 ## [1.0.0] - 2025-08-21
 ### Changed

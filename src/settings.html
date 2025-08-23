@@ -168,14 +168,6 @@
           </div>
           <div style="font-size:11px;opacity:.7;margin-top:4px;color:var(--warning);">Warning: May result in very high API costs. Extends the limit your model's context window.</div>
         </div>
-        <div class="control-group" style="min-width:200px;"><span>Auto Context Building</span>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <input type="checkbox" id="autoContextBuildingEnabled" style="width:18px;height:18px;" />
-            <label for="autoContextBuildingEnabled" style="font-size:13px;user-select:none;">🧠 Build document understanding automatically</label>
-          </div>
-          <div style="font-size:11px;opacity:.7;margin-top:4px;">AI learns key concepts from each summary to improve future context awareness.</div>
-          <label for="unlimitedInputEnabled" style="font-size:13px;user-select:none;color:var(--warning);">⚠️ Builds up context over time + can hallucinate</label>
-        </div>
         <div class="control-group" style="min-width:200px;">
           <span>Max Input Characters</span>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
@@ -184,6 +176,16 @@
           </div>
           <div style="font-size:11px;opacity:.7;margin-top:4px;">Character limit for input text (1,000 - 100,000). Higher values use more API tokens.</div>
         </div>
+        <div class="control-group" style="min-width:200px;">
+          <span>Max Output Tokens</span>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+            <input type="range" id="maxOutputTokensRange" min="100" max="25000" step="100" style="flex:1;" />
+            <input type="number" id="maxOutputTokensNumber" min="100" max="25000" step="100" style="width:80px;padding:4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);" />
+          </div>
+          <div style="font-size:11px;opacity:.7;margin-top:4px;">Maximum tokens for AI response (100 - 4,000). Higher values allow longer summaries but cost more.</div>
+          <div style="font-size:11px;opacity:.7;margin-top:4px;">⚠️ Some models have their own limit</div>
+        </div>
+        
       </div>
     </div>
   </div>
@@ -234,8 +236,8 @@
       </div>
         <div style="margin-top:10px;width:100%;text-align:center;">
           <h2 style="color:var(--accent);font-size:15px;margin-bottom:6px;">Contact & Bugs</h2>
-          <div style="font-size:13px;opacity:.8;">For bugs or feedback, reach me on Discord: <span style="font-weight:600;">8_l</span></div>
-          <div style="font-size:13px;opacity:.8;margin-top:4px;">Website: <a href="https://eightl.github.io/" target="_blank" style="color:var(--accent);text-decoration:underline;">eightl.github.io</a></div>
+          <div style="font-size:13px;opacity:.8;">For bugs or feedback, reach me on Discord: <span style="font-weight:600;">8_L#8000</span></div>
+          <div style="font-size:13px;opacity:.8;margin-top:4px;">Website: <a href="https://eightl.github.io/products" target="_blank" style="color:var(--accent);text-decoration:underline;">eightl.github.io</a></div>
         </div>
     </div>
 </main>
@@ -259,9 +261,10 @@
   // Removed quick-toggle button (previously #autoHidePresets)
   const autoCopyEnabled = document.getElementById('autoCopyEnabled');
   const unlimitedInputEnabled = document.getElementById('unlimitedInputEnabled');
-  const autoContextBuildingEnabled = document.getElementById('autoContextBuildingEnabled');
   const maxInputCharsRange = document.getElementById('maxInputCharsRange');
   const maxInputCharsNumber = document.getElementById('maxInputCharsNumber');
+  const maxOutputTokensRange = document.getElementById('maxOutputTokensRange');
+  const maxOutputTokensNumber = document.getElementById('maxOutputTokensNumber');
   const presetFilter = document.getElementById('presetFilter');
   const presetCountBadge = document.getElementById('presetCountBadge');
   const resetAllBtn = document.getElementById('resetAll');
@@ -294,14 +297,84 @@
 
   function formatCombo(e){
     let parts=[]; if(e.metaKey) parts.push('Command'); if(e.ctrlKey) parts.push('Control'); if(e.altKey) parts.push('Alt'); if(e.shiftKey) parts.push('Shift');
-    let key=e.key; if(key===' ') key='Space'; if(key==='Escape') key='Esc'; if(key.startsWith('Arrow')) key=key.replace('Arrow',''); if(/^F\d{1,2}$/.test(key)){} else if(key.length===1) key=key.toUpperCase(); if(['Control','Shift','Alt','Meta','Command'].includes(key)) return ''; parts.push(key); return parts.join('+');
+    
+    let key = e.key;
+    
+    // Handle special keys
+    if(key === ' ') key = 'Space';
+    else if(key === 'Escape') key = 'Esc';
+    else if(key.startsWith('Arrow')) key = key.replace('Arrow','');
+    
+    // Skip modifier-only combinations
+    if(['Control','Shift','Alt','Meta','Command'].includes(key)) return '';
+    
+    // Filter out non-ASCII characters that can occur with Alt/Option combinations
+    if (key.length === 1) {
+      // Check if the character is ASCII (0-127)
+      if (key.charCodeAt(0) > 127) {
+        // Try to get the actual key from the code instead
+        let actualKey = e.code;
+        if (actualKey.startsWith('Key')) {
+          key = actualKey.replace('Key', '');
+        } else if (actualKey.startsWith('Digit')) {
+          key = actualKey.replace('Digit', '');
+        } else {
+          // For other non-ASCII characters, skip this combination
+          return '';
+        }
+      } else {
+        key = key.toUpperCase();
+      }
+    }
+    // Final validation - ensure all parts are ASCII
+    const finalCombo = [...parts, key].join('+');
+    if (!/^[\x00-\x7F]*$/.test(finalCombo)) {
+      return ''; // Skip non-ASCII combinations
+    }
+    
+    parts.push(key); 
+    return parts.join('+');
   }
-  document.addEventListener('keydown', e=>{
+
+  function formatMouseCombo(e, button){
+    let parts=[]; if(e.metaKey) parts.push('Command'); if(e.ctrlKey) parts.push('Control'); if(e.altKey) parts.push('Alt'); if(e.shiftKey) parts.push('Shift');
+    switch(button) {
+      case 0: parts.push('leftclick'); break;
+      case 1: parts.push('middleclick'); break;
+      case 2: parts.push('rightclick'); break;
+      case 3: parts.push('mousebutton4'); break;
+      case 4: parts.push('mousebutton5'); break;
+      default: return '';
+    }
+    return parts.join('+');
+  }
+
+  async function formatShortcutWithIcons(shortcut, forDisplay = false){
+    return await window.clipAI.formatShortcutWithIcons(shortcut, forDisplay);
+  }
+  document.addEventListener('keydown', async e=>{
     if(!recordingBtn) return; e.preventDefault(); e.stopPropagation();
     const presetId = recordingBtn.dataset.id; const preset = presets.find(p=>p.id===presetId); if(!preset) return;
-    if(e.key==='Escape'){ recordingBtn.textContent = preset.hotkey || 'Set Key Sequence'; recordingBtn.classList.remove('recording'); recordingBtn=null; return; }
+    if(e.key==='Escape'){ recordingBtn.textContent = await formatShortcutWithIcons(preset.hotkey, true) || 'Set Key Sequence'; recordingBtn.classList.remove('recording'); recordingBtn=null; return; }
     if(e.key==='Backspace' || e.key==='Delete'){ preset.hotkey=''; recordingBtn.textContent='Set Key Sequence'; recordingBtn.classList.remove('recording'); recordingBtn=null; savePresets(); return; }
-    const combo=formatCombo(e); if(!combo) return; preset.hotkey=combo; recordingBtn.textContent=combo; recordingBtn.classList.remove('recording'); recordingBtn=null; savePresets();
+    const combo=formatCombo(e); 
+    if(!combo) {
+      // Show brief feedback for invalid combinations
+      recordingBtn.textContent='Invalid combination';
+      setTimeout(() => {
+        recordingBtn.textContent='Press key/mouse combo…';
+      }, 800);
+      return; 
+    }
+    preset.hotkey=combo; recordingBtn.textContent=await formatShortcutWithIcons(combo, true); recordingBtn.classList.remove('recording'); recordingBtn=null; savePresets();
+  });
+
+  document.addEventListener('mousedown', async e=>{
+    if(!recordingBtn) return; e.preventDefault(); e.stopPropagation();
+    const presetId = recordingBtn.dataset.id; const preset = presets.find(p=>p.id===presetId); if(!preset) return;
+    // Only handle mouse buttons 0-4 (left, middle, right, side buttons)
+    if(e.button < 0 || e.button > 4) return;
+    const combo=formatMouseCombo(e, e.button); if(!combo) return; preset.hotkey=combo; recordingBtn.textContent=await formatShortcutWithIcons(combo, true); recordingBtn.classList.remove('recording'); recordingBtn=null; savePresets();
   });
 
   function visiblePresets(){
@@ -325,7 +398,10 @@
     // Header
     const header=document.createElement('div'); header.className='preset-card-header';
     const nameInput=document.createElement('input'); nameInput.type='text'; nameInput.className='preset-name'; nameInput.value=preset.name; nameInput.placeholder='Preset Name'; nameInput.onchange=e=>{ preset.name=e.target.value; savePresets(); };
-    const hotkeyBtn=document.createElement('button'); hotkeyBtn.className='hotkey-btn preset-hotkey'; hotkeyBtn.textContent=preset.hotkey || 'Set Hotkey'; hotkeyBtn.dataset.id=preset.id; hotkeyBtn.onclick=()=>{ if(recordingBtn){ const oldPreset = presets.find(p=>p.id===recordingBtn.dataset.id); recordingBtn.textContent= oldPreset.hotkey || 'Set Hotkey'; recordingBtn.classList.remove('recording'); } recordingBtn=hotkeyBtn; hotkeyBtn.classList.add('recording'); hotkeyBtn.textContent='Press combo…'; };
+    const hotkeyBtn=document.createElement('button'); hotkeyBtn.className='hotkey-btn preset-hotkey'; hotkeyBtn.dataset.id=preset.id; 
+    // Set initial text content asynchronously
+    formatShortcutWithIcons(preset.hotkey, true).then(text => hotkeyBtn.textContent = text || 'Set Key Sequence');
+    hotkeyBtn.onclick=async ()=>{ if(recordingBtn){ const oldPreset = presets.find(p=>p.id===recordingBtn.dataset.id); recordingBtn.textContent= await formatShortcutWithIcons(oldPreset.hotkey, true) || 'Set Key Sequence'; recordingBtn.classList.remove('recording'); } recordingBtn=hotkeyBtn; hotkeyBtn.classList.add('recording'); hotkeyBtn.textContent='Press key/mouse combo…'; };
     header.appendChild(nameInput); header.appendChild(hotkeyBtn);
     // Body
     const body=document.createElement('div'); body.className='preset-card-body';
@@ -338,7 +414,14 @@
     card.appendChild(header); card.appendChild(body); card.appendChild(footer); card.appendChild(deleteBtn); return card;
   }
   function addPreset(){ presets.push({ id:`p_${Date.now()}`, name:`Preset ${presets.length+1}`, prompt:'Provide a concise summary.', hotkey:'' }); renderPresets(); savePresets(); }
-  function removePreset(id){ presets = presets.filter(p=>p.id!==id); renderPresets(); savePresets(); }
+  function removePreset(id){
+    const preset = presets.find(p=>p.id===id);
+    const name = preset?.name || 'this preset';
+    if(!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    presets = presets.filter(p=>p.id!==id);
+    renderPresets();
+    savePresets();
+  }
   function toggleDeleteMode(){ deleteMode=!deleteMode; renderPresets(); }
 
   async function savePresets(){ const {conflicts}= await clipAI.setSummaryPresets({presets}); if(conflicts && conflicts.length){ status.textContent = `Warning: Duplicate hotkey "${conflicts[0].hotkey}"`; } else { status.textContent='Presets saved.'; } setTimeout(()=> status.textContent='', 2500); }
@@ -363,6 +446,13 @@
     maxInputCharsRange.value = validChars;
     maxInputCharsNumber.value = validChars;
     if(persist){ await clipAI.setMaxInputChars(validChars); }
+  }
+
+  async function updateMaxOutputTokens(tokens, persist=true){
+    const validTokens = Math.max(100, Math.min(25000, parseInt(tokens) || 800));
+    maxOutputTokensRange.value = validTokens;
+    maxOutputTokensNumber.value = validTokens;
+    if(persist){ await clipAI.setMaxOutputTokens(validTokens); }
   }
 
   // Text appearance functions
@@ -570,7 +660,6 @@
     sessionsList.innerHTML = documentSessions.map(session => {
       const typeEmoji = { book: '📚', paper: '📄', thesis: '🎓', report: '📊', article: '📰' }[session.type] || '📄';
       const isActive = activeSession?.id === session.id;
-      const contextEnabled = autoContextBuildingEnabled?.checked !== false;
       
       return `
         <div style="border:1px solid ${isActive ? 'var(--accent)' : 'var(--border)'};border-radius:4px;padding:12px;background:${isActive ? 'rgba(var(--accent-rgb), 0.1)' : 'var(--bg)'};position:relative;">
@@ -582,7 +671,6 @@
             </div>
             <div style="display:flex;gap:8px;margin-left:12px;align-items:center;">
               ${!isActive ? `<button data-action="activate" data-session-id="${session.id}" style="padding:4px 8px;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:6px;font-size:11px;">Activate</button>` : '<span style="display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border:1px solid var(--accent);background:rgba(var(--accent-rgb),0.08);color:var(--accent);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;">● Active</span>'}
-              <button data-action="context" data-session-id="${session.id}" style="padding:4px 6px;border:1px solid ${contextEnabled ? 'var(--accent)' : 'var(--border)'};color:${contextEnabled ? 'var(--accent)' : 'var(--text)'};background:transparent;border-radius:3px;font-size:11px;opacity:${contextEnabled ? '1' : '0.5'};" title="View AI Context${contextEnabled ? '' : ' (Auto Context Building disabled)'}">🧠</button>
               <button data-action="edit" data-session-id="${session.id}" style="padding:4px 6px;border:1px solid var(--border);color:var(--text);background:transparent;border-radius:3px;font-size:11px;">✏️</button>
               <button data-action="delete" data-session-id="${session.id}" style="padding:4px 6px;border:1px solid var(--danger);color:var(--danger);background:transparent;border-radius:3px;font-size:11px;">🗑️</button>
             </div>
@@ -601,9 +689,6 @@
       switch (e.target.dataset.action) {
         case 'activate':
           if (session) await activateSession(session);
-          break;
-        case 'context':
-          if (sessionId) await window.viewSessionContext(sessionId);
           break;
         case 'edit':
           if (session) showSessionModal(session);
@@ -635,102 +720,6 @@
     }
   }
 
-  window.viewSessionContext = async function(sessionId) {
-    const session = documentSessions.find(s => s.id === sessionId);
-    if (!session) return;
-    
-    const cfg = await clipAI.getConfig();
-    const sessionInsights = cfg.sessionContexts?.[sessionId] || [];
-    
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;';
-    
-    const form = document.createElement('div');
-    form.style.cssText = 'background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;width:500px;max-width:90vw;max-height:80vh;overflow-y:auto;';
-    
-    let currentInsights = [...sessionInsights];
-    
-    function renderForm() {
-      form.innerHTML = `
-        <h3 style="margin:0 0 16px 0;color:var(--accent);">🧠 AI Context for "${session.title}"</h3>
-        <div style="font-size:12px;opacity:.8;margin-bottom:16px;">These are concepts the AI has learned from your summaries. You can edit or remove them.</div>
-        
-        <div id="contextList" style="margin-bottom:16px;">
-          ${currentInsights.length === 0 
-            ? '<div style="text-align:center;opacity:.5;padding:20px;">No AI-generated context yet. Start summarizing to build context!</div>'
-            : currentInsights.map((insight, index) => `
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);">
-                <input type="text" value="${insight.replace(/"/g, '&quot;')}" data-index="${index}" style="flex:1;padding:4px;border:1px solid var(--border);border-radius:3px;background:var(--panel);color:var(--text);font-size:12px;" />
-                <button data-remove="${index}" style="padding:4px 6px;border:1px solid var(--danger);color:var(--danger);background:transparent;border-radius:3px;font-size:11px;">×</button>
-              </div>
-            `).join('')
-          }
-        </div>
-        
-        <div style="margin-bottom:16px;">
-          <button id="addContextBtn" style="padding:6px 12px;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:4px;font-size:12px;">+ Add Custom Insight</button>
-        </div>
-        
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button id="cancelContext" style="padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:4px;">Cancel</button>
-          <button id="saveContext" style="padding:8px 16px;border:1px solid var(--accent);background:var(--accent);color:white;border-radius:4px;">Save Changes</button>
-          <button id="clearAllContext" style="padding:8px 16px;border:1px solid var(--danger);background:var(--danger);color:white;border-radius:4px;">Clear All</button>
-        </div>
-      `;
-      
-      // Event listeners
-      form.querySelectorAll('[data-remove]').forEach(btn => {
-        btn.onclick = () => {
-          const index = parseInt(btn.dataset.remove);
-          currentInsights.splice(index, 1);
-          renderForm();
-        };
-      });
-      
-      document.getElementById('addContextBtn').onclick = () => {
-        currentInsights.push('');
-        renderForm();
-        setTimeout(() => {
-          const inputs = form.querySelectorAll('input[data-index]');
-          if (inputs.length > 0) inputs[inputs.length - 1].focus();
-        }, 10);
-      };
-      
-      document.getElementById('cancelContext').onclick = () => document.body.removeChild(modal);
-      
-      document.getElementById('clearAllContext').onclick = () => {
-        if (confirm('Clear all AI-generated context for this session?')) {
-          currentInsights = [];
-          renderForm();
-        }
-      };
-      
-      document.getElementById('saveContext').onclick = async () => {
-        const inputs = form.querySelectorAll('input[data-index]');
-        const updatedInsights = [];
-        
-        inputs.forEach(input => {
-          const value = input.value.trim();
-          if (value && value.length < 100) {
-            updatedInsights.push(value);
-          }
-        });
-        
-        try {
-          await clipAI.setSessionContext(sessionId, updatedInsights);
-          document.body.removeChild(modal);
-        } catch(e) {
-          alert('Failed to save context changes');
-        }
-      };
-    }
-    
-    renderForm();
-    modal.appendChild(form);
-    document.body.appendChild(modal);
-    modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
-  }
-
   // Event listeners for sessions
   createSessionBtn.addEventListener('click', () => showSessionModal());
   endSessionBtn.addEventListener('click', endCurrentSession);
@@ -747,8 +736,8 @@
     markdownModeSel.value = cfg.markdownMode || (cfg.markdownEnabled===false ? 'off':'full');
   autoCopyEnabled.checked = cfg.autoCopySelection !== false; // default true
   unlimitedInputEnabled.checked = cfg.unlimitedInput || false;
-  autoContextBuildingEnabled.checked = cfg.autoContextBuilding !== false; // default true
   updateMaxInputChars(cfg.maxInputChars || 25000, false);
+  updateMaxOutputTokens(cfg.maxOutputTokens || 800, false);
   
   unlimitedInputEnabled.addEventListener('change', async ()=> {
     if (unlimitedInputEnabled.checked) {
@@ -757,7 +746,7 @@
 This will allow input up to your model's full context window (potentially 100k+ characters).
 
 RISKS:
-• Very high API costs (potentially $10+ per summary)
+• Very high API costs
 • Slower processing times
 • May hit rate limits
 
@@ -772,14 +761,13 @@ Are you sure you want to enable unlimited input?`);
     await clipAI.setUnlimitedInput(unlimitedInputEnabled.checked);
   });
 
-  autoContextBuildingEnabled.addEventListener('change', async ()=> {
-    await clipAI.setAutoContextBuilding(autoContextBuildingEnabled.checked);
-    renderSessions(); // Update brain button appearance
-  });
-
   // Max input chars event listeners
   maxInputCharsRange.addEventListener('input', ()=> updateMaxInputChars(maxInputCharsRange.value));
   maxInputCharsNumber.addEventListener('input', ()=> updateMaxInputChars(maxInputCharsNumber.value));
+  
+  // Max output tokens event listeners
+  maxOutputTokensRange.addEventListener('input', ()=> updateMaxOutputTokens(maxOutputTokensRange.value));
+  maxOutputTokensNumber.addEventListener('input', ()=> updateMaxOutputTokens(maxOutputTokensNumber.value));
     
     // Load text appearance settings
     const textAppearance = cfg.textAppearance || {};
