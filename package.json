@@ -13,7 +13,7 @@
     "dev": "electron .",
     "build": "electron-builder -mwl",
     "package:mac": "electron-packager . ClipAi --platform=darwin --arch=arm64 --overwrite --prune=true",
-    "dist": "electron-builder --mac",
+    "dist": "electron-builder --mac --publish=never",
   "dist:win": "electron-builder --win --publish=never"
   },
   "devDependencies": {
