@@ -38,6 +38,7 @@
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "icons/icon.icns",
+      "identity": null,
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",

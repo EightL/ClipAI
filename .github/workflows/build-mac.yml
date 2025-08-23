@@ -22,16 +22,9 @@ jobs:
       - name: Build macOS artifacts
         run: npm run dist
         env:
-          # Add these secrets in GitHub for code signing
-          CSC_LINK: ${{ secrets.APPLE_CERTIFICATE }}
-          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Optional: for notarization
-          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          # APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          ELECTRON_BUILDER_SKIP_TAR: true
+          ELECTRON_BUILDER_SKIP_NPM_INSTALL: true
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v4
         with:
