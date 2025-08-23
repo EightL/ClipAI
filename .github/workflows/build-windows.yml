@@ -22,9 +22,9 @@ jobs:
       - name: Build Windows artifacts
         run: npm run dist:win
         env:
-          # Uncomment and set if you add code signing cert secrets
-          # CSC_LINK: ${{ secrets.CSC_LINK }}
-          # CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # Optional: needed only if publishing to GitHub Releases from electron-builder
           # GH_TOKEN: ${{ secrets.GH_TOKEN }}
           ELECTRON_BUILDER_SKIP_TAR: true
           ELECTRON_BUILDER_SKIP_NPM_INSTALL: true

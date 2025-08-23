@@ -22,7 +22,7 @@
     "electron-packager": "^17.1.2"
   },
   "build": {
-    "appId": "com.yourdomain.clipai",
+    "appId": "com.eightl.clipai",
     "productName": "ClipAI",
     "asar": true,
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
@@ -37,20 +37,44 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "icon": "icons/icon.icns"
+      "icon": "icons/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "provisioningProfile": null,
+      "type": "distribution",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ]
     },
     "win": {
       "icon": "icons/icon.ico",
+      "publisherName": ["EightL"],
+      "signingHashAlgorithms": ["sha256"],
+      "rfc3161TimeStampServer": "http://timestamp.sectigo.com",
+      "verifyUpdateCodeSignature": false,
+      "requestedExecutionLevel": "asInvoker",
       "target": [
-        { "target": "nsis", "arch": ["x64", "arm64"] },
-        "portable"
+        { "target": "nsis", "arch": ["x64", "arm64"] }
       ]
     },
     "nsis": {
       "oneClick": false,
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": false,
+      "createStartMenuShortcut": true,
+      "menuCategory": "Productivity"
     }
   }
 }
