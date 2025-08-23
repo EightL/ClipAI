@@ -513,6 +513,7 @@ async function captureSelectionText(){
 
 // ------------------------- Provider Calls -------------------------
 async function summarizeWithProvider(provider, key, model, systemPrompt, userText){
+  const cfg = loadConfig();
   const headers = { 'Content-Type':'application/json' };
   let body = null, url = '';
   const trimmed = userText.slice(0, MAX_TEXT_LEN);

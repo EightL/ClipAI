@@ -21,13 +21,13 @@ jobs:
           cache: 'npm'
       - name: Install deps
         run: npm ci
-      - name: Build artifacts
-        run: |
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            npm run build
-          else
-            npx electron-builder --win nsis
-          fi
+      - name: Build artifacts (macOS)
+        if: runner.os == 'macOS'
+        run: npm run build
+        shell: bash
+      - name: Build artifacts (Windows)
+        if: runner.os == 'Windows'
+        run: npx electron-builder --win nsis
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
